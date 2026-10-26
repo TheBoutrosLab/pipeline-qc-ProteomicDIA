@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Pipeline Steps - pipeline-qc-ProteomicDIA</title>
+    <title>Pipeline steps - pipeline-qc-ProteomicDIA</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,7 +13,7 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Pipeline Steps";
+        var mkdocs_page_name = "Pipeline steps";
         var mkdocs_page_input_path = "pipeline-steps.md";
         var mkdocs_page_url = null;
       </script>
@@ -41,31 +41,17 @@
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../overview/">Overview</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../how-to-run/">How To Run</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../flow-diagram/">Flow Diagram</a>
-                </li>
-              </ul>
-              <ul class="current">
-                <li class="toctree-l1 current"><a class="reference internal current" href="./">Pipeline Steps</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#1-stepprocess-1">1. Step/Process 1</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#2-stepprocess-2">2. Step/Process 2</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#3-stepprocess-n">3. Step/Process n</a>
-    </li>
-    </ul>
+                <li class="toctree-l1"><a class="reference internal" href="../how-to-run/">How to run</a>
                 </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../inputs/">Inputs</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Pipeline steps</a>
+    <ul class="current">
+    </ul>
                 </li>
               </ul>
               <ul>
@@ -73,19 +59,7 @@
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../testing-and-validation/">Testing and Validation</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../references/">References</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../discussions/">Discussions</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../contributors/">Contributors</a>
+                <li class="toctree-l1"><a class="reference internal" href="../testing/">Testing</a>
                 </li>
               </ul>
               <ul>
@@ -106,9 +80,9 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Pipeline Steps</li>
+      <li class="breadcrumb-item active">Pipeline steps</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/1a67fc2cb4ce3699fb1ff63e98a862a3e29e53f2/README.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/bc575f063340b26e333a242cd3e838f27f55e264/README.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -116,26 +90,70 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h2 id="pipeline-steps">Pipeline Steps</h2>
-<h3 id="1-stepprocess-1">1. Step/Process 1</h3>
-<blockquote>
-<p>A 2-3 sentence description of each step/proccess in your pipeline that includes the purpose of the step/process, the tool(s) being used and their version, and the expected scientific inputs/outputs (e.g: FASTQs and BAMs) of the pipeline.</p>
-</blockquote>
-<h3 id="2-stepprocess-2">2. Step/Process 2</h3>
-<blockquote>
-<p>A 2-3 sentence description of each step/proccess in your pipeline that includes the purpose of the step/process, the tool(s) being used and their version, and the expected scientific inputs/outputs (e.g: FASTQs and BAMs) of the pipeline.</p>
-</blockquote>
-<h3 id="3-stepprocess-n">3. Step/Process n</h3>
-<blockquote>
-<p>A 2-3 sentence description of each step/proccess in your pipeline that includes the purpose of the step/process, the tool(s) being used and their version, and the expected scientific inputs/outputs (e.g: FASTQs and BAMs) of the pipeline.</p>
-</blockquote>
-<hr />
+                <h2 id="pipeline-steps">Pipeline steps</h2>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Input</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>summarize_mzML</code></td>
+<td>One mzML per sample</td>
+<td>Acquisition duration, scan counts and rates, cycle timing, isolation windows, and TIC.</td>
+</tr>
+<tr>
+<td><code>extract_MS1_matrix</code></td>
+<td>One mzML per sample</td>
+<td>Bounded RT, m/z, and intensity matrix plus selection metadata.</td>
+</tr>
+<tr>
+<td><code>plot_MS1_landscape</code></td>
+<td>MS1 matrix and metadata</td>
+<td>Offline interactive 3D stick spectrum in HTML.</td>
+</tr>
+<tr>
+<td><code>summarize_search_idXML</code></td>
+<td>One unfiltered search idXML per sample</td>
+<td>Candidate and best-hit counts, search-score percentiles, and charge counts.</td>
+</tr>
+<tr>
+<td><code>summarize_filtered_idXML</code></td>
+<td>One final filtered idXML per sample</td>
+<td>Accepted PSM and distinct peptide counts and score percentiles.</td>
+</tr>
+<tr>
+<td><code>summarize_ProteinGroups_*</code></td>
+<td>One selected inference route</td>
+<td>Cohort protein-group counts, sizes, and probabilities when available.</td>
+</tr>
+<tr>
+<td><code>summarize_EasyPQP_library</code></td>
+<td>Library and export summary</td>
+<td>Cohort transition, precursor, peptide, and export counts.</td>
+</tr>
+<tr>
+<td><code>summarize_DIANN_report</code></td>
+<td>DIA-NN main report</td>
+<td>Per-sample quantified counts, intensity percentiles, and precursor missingness.</td>
+</tr>
+<tr>
+<td><code>collect_QCMetrics</code></td>
+<td>All stage metric TSVs</td>
+<td>Combined QC metric table.</td>
+</tr>
+</tbody>
+</table>
+<p>The MS1 matrix contains up to 120 strongest positive peaks from each of 350 evenly spaced MS1 scans within m/z 300–1200. The HTML embeds Plotly and works offline. The plot colors encode within-sample log-intensity percentiles: yellow (0–25), orange (25–50), red (50–75), purple (75–95), and blue (95–100). Colors therefore do not represent the same absolute intensity across samples. Continuous-value metric summaries include a nonmissing count and the 5th, 25th, 50th, 75th, and 95th percentiles.</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../flow-diagram/" class="btn btn-neutral float-left" title="Flow Diagram"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../inputs/" class="btn btn-neutral float-right" title="Inputs">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../inputs/" class="btn btn-neutral float-left" title="Inputs"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../outputs/" class="btn btn-neutral float-right" title="Outputs">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -162,10 +180,10 @@
         </span>
     
     
-      <span><a href="../flow-diagram/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../inputs/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../inputs/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../outputs/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
