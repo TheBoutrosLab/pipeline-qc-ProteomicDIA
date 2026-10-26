@@ -1,0 +1,28 @@
+---
+global:
+  temp_dir: work
+  nf_config: test/global.config
+  remove_temp: false
+  clean_logs: true
+
+cases:
+  - name: test-integration-Fido
+    message: Summarize two DIA runs and cohort Fido groups
+    nf_script: main.nf
+    nf_config: test/test-integration-Fido/test.config
+    verbose: true
+  - name: test-integration-ProteinProphet
+    message: Summarize two DIA runs and cohort ProteinProphet groups
+    nf_script: main.nf
+    nf_config: test/test-integration-ProteinProphet/test.config
+    verbose: true
+  - name: test-integration-Epifany
+    message: Summarize two DIA runs and cohort Epifany groups
+    nf_script: main.nf
+    nf_config: test/test-integration-Epifany/test.config
+    verbose: true
+  - name: test-integration-ProtLoom
+    message: Summarize two DIA runs and cohort ProtLoom groups
+    nf_script: main.nf
+    nf_config: test/test-integration-ProtLoom/test.config
+    verbose: true

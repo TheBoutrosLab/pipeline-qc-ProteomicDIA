@@ -2,73 +2,73 @@
 dataset_id:
   type: 'String'
   required: true
-  help: 'Dataset identifier'
-patient_id:
-  type: 'String'
+  help: 'Cohort identifier'
+mzml_csv:
+  type: 'Path'
+  mode: 'r'
   required: true
-  help: 'Patient identifier'
-sample_id:
-  type: 'String'
+  help: 'CSV with sample_name,fraction_id,path columns; also accepts sample_name,mzML. One mzML per sample currently'
+search_idxml_csv:
+  type: 'Path'
+  mode: 'r'
   required: true
-  help: 'Sample identifier'
-param_name:
+  help: 'Metapipeline validation.csv with sample_name,search_engine,idXML'
+filtered_idxml_csv:
+  type: 'Path'
+  mode: 'r'
+  required: true
+  help: 'CSV with sample_name,idXML for final filtered validation results'
+inference_route:
   type: 'String'
-  required: false
-  default: 'foo-bar'
-  help: 'Example pipeline parameter; replace with pipeline-specific parameters'
+  choices: ['ProteinProphet', 'Fido', 'Epifany', 'ProtLoom']
+  required: true
+  help: 'Selected cohort protein inference route'
+protein_groups:
+  type: 'Path'
+  mode: 'r'
+  required: true
+  help: 'Cohort group idXML, Fido JSON, or ProtLoom sample-groups CSV'
+library_tsv:
+  type: 'Path'
+  mode: 'r'
+  required: true
+  help: 'EasyPQP library TSV'
+export_summary_tsv:
+  type: 'Path'
+  mode: 'r'
+  required: true
+  help: 'Validation EasyPQP export summary TSV'
+diann_report:
+  type: 'Path'
+  mode: 'r'
+  required: true
+  help: 'DIA-NN main report TSV'
 output_dir:
   type: 'Path'
   mode: 'w'
   required: true
-  help: 'Absolute path to output directory'
-apptainer_library:
-  type: 'Path'
-  mode: 'r'
+  help: 'Root output directory'
+docker_image_plotly:
+  type: 'String'
   required: false
-  help: 'Absolute path to Apptainer library directory'
-apptainer_cache:
-  type: 'Path'
-  mode: 'w'
+  help: 'Public image with Plotly installed; defaults to multiqc/multiqc:v1.35'
+pyopenms_version:
+  type: 'String'
   required: false
-  help: 'Absolute path to Apptainer cache directory'
-singularity_library:
-  type: 'Path'
-  mode: 'r'
-  required: false
-  help: 'Absolute path to Singularity library directory'
-singularity_cache:
+  help: 'Lab pyOpenMS container version'
+work_dir:
   type: 'Path'
   mode: 'w'
   required: false
-  help: 'Absolute path to Singularity cache directory'
+  help: 'Nextflow work directory'
 base_resource_update:
   type: 'ResourceUpdateNamespace'
   required: false
-  help: 'User-defined modifications for adjusting base resource allocations for processes'
+  help: 'Process resource overrides'
   elements:
     memory:
       type: 'ResourceUpdateList'
       required: false
-      help: 'List of memory updates'
     cpus:
       type: 'ResourceUpdateList'
       required: false
-      help: 'List of CPU updates'
-input:
-  type: 'InputNamespace'
-  required: true
-  help: 'Input samples'
-  elements:
-    BAM:
-      type: 'InputBAMNamespace'
-      required: true
-      help: 'Input BAM samples grouped by sample type'
-      elements:
-        normal:
-          type: 'BAMEntryList'
-          required: false
-          help: 'Input normal sample'
-        tumor:
-          type: 'BAMEntryList'
-          required: false
-          help: 'Input tumor sample'

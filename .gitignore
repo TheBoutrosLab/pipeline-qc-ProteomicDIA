@@ -302,3 +302,7 @@ work/
 *.temp
 *.xlk
 *.~vsd*
+
+# Small, versioned nf-test fixtures
+!test/fixtures/*.mzML
+!test/fixtures/*.idXML
