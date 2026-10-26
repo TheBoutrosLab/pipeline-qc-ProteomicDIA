@@ -1,162 +1,123 @@
-# Pipeline Name
+# pipeline-qc-ProteomicDIA
 
-[![Prepare release](https://img.shields.io/badge/Action-Create%20New%20Release-blue)](https://github.com/theboutroslab/template-NextflowPipeline/actions/workflows/prepare-release.yaml)
+This Nextflow DSL2 pipeline collects quality-control metrics from a completed `metapipeline-ProteomicDIA` cohort. It summarizes each sample's mzML, unfiltered MSFragger search idXML, and final filtered idXML; the selected protein-inference route; the cohort EasyPQP library; and the DIA-NN report. It also writes an interactive 3D MS1 peak map for each mzML.
 
-- [Pipeline Name](#pipeline-name)
-  - [Overview](#overview)
-  - [How To Run](#how-to-run)
-  - [Flow Diagram](#flow-diagram)
-  - [Pipeline Steps](#pipeline-steps)
-    - [1. Step/Process 1](#1-stepprocess-1)
-    - [2. Step/Process 2](#2-stepprocess-2)
-    - [3. Step/Process n](#3-stepprocess-n)
-  - [Inputs](#inputs)
-  - [Outputs](#outputs)
-  - [Testing and Validation](#testing-and-validation)
-    - [Test Data Set](#test-data-set)
-    - [Validation <version number\>](#validation-version-number)
-    - [Validation Tool](#validation-tool)
-  - [References](#references)
-  - [Discussions](#discussions)
-  - [Contributors](#contributors)
-  - [License](#license)
-## Overview
+## How to run
 
-A 3-4 sentence summary of the pipeline, including the pipeline's purpose, the type of expected scientific inputs/outputs of the pipeline (e.g: FASTQs and BAMs), and a list of tools/steps in the pipeline.
+1. Initialize Git submodules with `git submodule update --init --recursive`.
+2. Copy [config/template.config](config/template.config) to a run-specific config and set all input paths, `inference_route`, `dataset_id`, and `output_dir`.
+3. Run with Nextflow 24.10.6 and the v1 syntax parser:
 
----
+   ```bash
+   export NXF_VER=24.10.6
+   export NXF_SYNTAX_PARSER=v1
+   nextflow run . -c /path/to/qc.config -profile apptainer
+   ```
 
-## How To Run
-
-1. Update the params section of the .config file
-
-2. Update the input yaml
-
-3. See the submission script, [here](https://github.com/theboutroslab/tool-submit-nf), to submit your pipeline
-
----
-
-## Flow Diagram
-
-A directed acyclic graph of your pipeline. The [PlantUML](https://plantuml.com/) code defining this diagram is version-controlled in the [docs/](./docs/) folder, and a [GitHub Action](https://github.com/theboutroslab/tool-PlantUML-action) automatically regenerates the SVG image when that file is changed.
-
-![Pipeline Graph](./docs/pipeline-flow.svg)
-
----
-
-## Pipeline Steps
-
-### 1. Step/Process 1
-
-> A 2-3 sentence description of each step/proccess in your pipeline that includes the purpose of the step/process, the tool(s) being used and their version, and the expected scientific inputs/outputs (e.g: FASTQs and BAMs) of the pipeline.
-
-### 2. Step/Process 2
-
-> A 2-3 sentence description of each step/proccess in your pipeline that includes the purpose of the step/process, the tool(s) being used and their version, and the expected scientific inputs/outputs (e.g: FASTQs and BAMs) of the pipeline.
-
-### 3. Step/Process n
-
-> A 2-3 sentence description of each step/proccess in your pipeline that includes the purpose of the step/process, the tool(s) being used and their version, and the expected scientific inputs/outputs (e.g: FASTQs and BAMs) of the pipeline.
-
----
+The `standard` and `docker` profiles use Docker; `apptainer` uses Apptainer. The OpenMS processes use `ghcr.io/theboutroslab/pyopenms:3.5.0`; the HTML plot uses `multiqc/multiqc:v1.35`, which provides Plotly. Set `work_dir` to scratch storage when processing large mzML files.
 
 ## Inputs
 
-### Input YAML
+Three CSV manifests identify the same set of samples. Paths in these CSVs may be absolute or relative to the CSV directory. The current pipeline supports one mzML per sample; `fraction_id` is retained for future fraction support.
 
-> include an example of the organization structure within the YAML. Example:
-```yaml
-input 1: 'patient_id'
-input:
-    normal:
-      - id: <normal id>
-        BAM: </path/to/normal.bam>
-    tumor:
-      - id: <tumor id>
-        BAM: </path/to/tumor.bam>
+**mzML CSV** (`mzml_csv`):
+
+```csv
+sample_name,fraction_id,path
+sample_01,1,/data/sample_01.mzML
+sample_02,1,/data/sample_02.mzML
 ```
 
-### Config
+The two-column `sample_name,mzML` form is also accepted.
 
-| Field | Type | Required | Description |
-| ----- | ---- | ------------ | ------------------------ |
-| param 1 | _type_ | yes/no | 1-2 sentence description of the parameter, including any defaults if any. |
-| param 2 | _type_ | yes/no | 1-2 sentence description of the parameter, including any defaults if any. |
-| param n | _type_ | yes/no | 1-2 sentence description of the parameter, including any defaults if any. |
-| `work_dir` | path | no | Path of working directory for Nextflow. When included in the sample config file, Nextflow intermediate files and logs will be saved to this directory. With ucla_cds, the default is `/scratch` and should only be changed for testing/development. Changing this directory to `/hot` or `/tmp` can lead to high server latency and potential disk space limitations, respectively. |
+**Unfiltered search idXML CSV** (`search_idxml_csv`):
 
-> Include the optional param `work_dir` in the inputs accompanied by a warning of the potentials dangers of using the param. Update the warning if necessary.
+```csv
+sample_name,search_engine,idXML
+sample_01,MSFragger,/data/sample_01_MSFragger.idXML
+sample_02,MSFragger,/data/sample_02_MSFragger.idXML
+```
 
----
+**Final filtered idXML CSV** (`filtered_idxml_csv`):
+
+```csv
+sample_name,idXML
+sample_01,/data/sample_01_MSFragger_filter.idXML
+sample_02,/data/sample_02_MSFragger_filter.idXML
+```
+
+The search CSV can be the metapipeline's `validation.csv`. Create the filtered CSV from the final validation outputs; the metapipeline does not currently publish it. Sample names must be unique and identical across all three CSVs.
+
+| Parameter | Description |
+| --- | --- |
+| `dataset_id` | Cohort identifier used in the output path and metric filenames. |
+| `mzml_csv` | Per-sample mzML manifest. |
+| `search_idxml_csv` | Unfiltered MSFragger search idXML manifest. |
+| `filtered_idxml_csv` | Final filtered validation idXML manifest. |
+| `inference_route` | `ProteinProphet`, `Fido`, `Epifany`, or `ProtLoom`. |
+| `protein_groups` | Cohort ProteinProphet or Epifany idXML; cohort Fido groups JSON; or a ProtLoom CSV described below. |
+| `library_tsv` | Published cohort EasyPQP library TSV. |
+| `export_summary_tsv` | Validation EasyPQP export summary TSV with `metric,count` columns. |
+| `diann_report` | DIA-NN main `report.tsv`. Its `Run` values must match a sample name, mzML filename, or mzML stem. |
+| `output_dir` | Root directory for QC results. |
+| `work_dir` | Optional Nextflow work directory. |
+| `pyopenms_version` | pyOpenMS image tag; default `3.5.0`. |
+| `docker_image_plotly` | Plotly image; default `multiqc/multiqc:v1.35`. |
+| `base_resource_update` | Optional process CPU and memory overrides. |
+
+ProteinProphet and Epifany use their cohort idXML outputs. Fido uses its cohort `*-Fido-groups.json`. For ProtLoom, set `protein_groups` to a CSV that points to the per-sample `*_groups.tsv` files produced by the cohort inference run:
+
+```csv
+sample_name,groups_tsv
+sample_01,/data/validation/sample_01/ProtLoom-0.2.3/output/sample_01_groups.tsv
+sample_02,/data/validation/sample_02/ProtLoom-0.2.3/output/sample_02_groups.tsv
+```
+
+## Pipeline steps
+
+| Process | Input | Result |
+| --- | --- | --- |
+| `summarize_mzML` | One mzML per sample | Acquisition duration, scan counts and rates, cycle timing, isolation windows, and TIC. |
+| `extract_MS1_matrix` | One mzML per sample | Bounded RT, m/z, and intensity matrix plus selection metadata. |
+| `plot_MS1_landscape` | MS1 matrix and metadata | Offline interactive 3D stick spectrum in HTML. |
+| `summarize_search_idXML` | One unfiltered search idXML per sample | Candidate and best-hit counts, search-score percentiles, and charge counts. |
+| `summarize_filtered_idXML` | One final filtered idXML per sample | Accepted PSM and distinct peptide counts and score percentiles. |
+| `summarize_ProteinGroups_*` | One selected inference route | Cohort protein-group counts, sizes, and probabilities when available. |
+| `summarize_EasyPQP_library` | Library and export summary | Cohort transition, precursor, peptide, and export counts. |
+| `summarize_DIANN_report` | DIA-NN main report | Per-sample quantified counts, intensity percentiles, and precursor missingness. |
+| `collect_QCMetrics` | All stage metric TSVs | Combined QC metric table. |
+
+The MS1 matrix contains up to 120 strongest positive peaks from each of 350 evenly spaced MS1 scans within m/z 300–1200. The HTML embeds Plotly and works offline. The plot colors encode within-sample log-intensity percentiles: yellow (0–25), orange (25–50), red (50–75), purple (75–95), and blue (95–100). Colors therefore do not represent the same absolute intensity across samples. Continuous-value metric summaries include a nonmissing count and the 5th, 25th, 50th, 75th, and 95th percentiles.
 
 ## Outputs
 
-<!-- List and describe the final output(s) of the pipeline. -->
+Results are published under `<output_dir>/qc-ProteomicDIA-1.0.0/<dataset_id>/`:
 
 | Output | Description |
-| ------------ | ------------------------ |
-| ouput 1 | 1 - 2 sentence description of the output. |
-| ouput 2 | 1 - 2 sentence description of the output. |
-| ouput n | 1 - 2 sentence description of the output. |
+| --- | --- |
+| `output/<dataset_id>_QC_metrics.tsv` | Combined long-form QC table. |
+| `output/mzML/<sample_name>_mzML_metrics.tsv` | Per-sample mzML metrics. |
+| `output/mzML/<sample_name>_MS1_matrix.tsv` and `.json` | Selected MS1 peaks and selection metadata. |
+| `output/mzML/<sample_name>_MS1_landscape.html` | Interactive MS1 figure. |
+| `output/search_idXML/<sample_name>_search_idXML_metrics.tsv` | Unfiltered search metrics. |
+| `output/filtered_idXML/<sample_name>_filtered_idXML_metrics.tsv` | Final filtered identification metrics. |
+| `output/ProteinGroups/<dataset_id>_ProteinGroups_metrics.tsv` | Cohort inference metrics. |
+| `output/EasyPQP/<dataset_id>_EasyPQP_metrics.tsv` | Library and export metrics. |
+| `output/DIA-NN/<dataset_id>_DIANN_metrics.tsv` | DIA-NN quantitation metrics. |
+| `log-*/nextflow-log/` | Nextflow trace, timeline, report, and effective parameters. |
 
----
+Each metric row records `dataset_id`, `sample_name` (empty for cohort metrics), `metric_name`, `group`, `value`, `unit`, and `source_file`. Programmed LC gradient duration and retention-time error are not derived from these inputs.
 
-## Testing and Validation
+## Testing
 
-### Test Data Set
+The UCLA nf-test suite has integration cases for ProteinProphet, Fido, Epifany, and ProtLoom. All four use the same two *E. coli* mzML files and their route-specific metapipeline outputs. Set `TEST_DATA_DIR` in a local `.env` file using [`.env-template`](.env-template), then run a case inside a Slurm job:
 
-A 2-3 sentence description of the test data set(s) used to validate and test this pipeline. If possible, include references and links for how to access and use the test dataset
+```bash
+bash test/run-nftest.sh test-integration-ProteinProphet
+```
 
-### Validation <version number\>
-
-| Input/Output | Description | Result |
-| ------------ | ------------------------ | ------------------------ |
-| metric 1 | 1 - 2 sentence description of the metric | quantifiable result |
-| metric 2 | 1 - 2 sentence description of the metric | quantifiable result |
-| metric n | 1 - 2 sentence description of the metric | quantifiable result |
-
-- [Reference/External Link/Path 1 to any files/plots or other validation results](<link>)
-- [Reference/External Link/Path 2 to any files/plots or other validation results](<link>)
-- [Reference/External Link/Path n to any files/plots or other validation results](<link>)
-
-### Validation Tool
-
-Included is a template for validating your input files. For more information on the tool check out: https://github.com/theboutroslab/package-PipeVal
-
----
-
-## References
-
-1. [Reference 1](<links-to-papers/external-code/documentation/metadata/other-repos/or-anything-else>)
-2. [Reference 2](<links-to-papers/external-code/documentation/metadata/other-repos/or-anything-else>)
-3. [Reference n](<links-to-papers/external-code/documentation/metadata/other-repos/or-anything-else>)
-
----
-
-## Discussions
-
-- [Issue tracker](<link-to-repo-issues-page>) to report errors and enhancement ideas.
-- Discussions can take place in [<pipeline> Discussions](<link-to-repo-discussions-page>)
-- [<pipeline> pull requests](<link-to-repo-pull-requests>) are also open for discussion
-
----
-
-## Contributors
-
-> Update link to repo-specific URL for GitHub Insights Contributors page.
-
-Please see list of [Contributors](https://github.com/theboutroslab/template-NextflowPipeline/graphs/contributors) at GitHub.
-
----
+See [test/README.md](test/README.md) for the other case names and test-data layout. These tests require the lab's external metapipeline outputs; they are not self-contained fixtures.
 
 ## License
 
-[pipeline name] is licensed under the GNU General Public License version 2. See the file LICENSE for the terms of the GNU GPL license.
-
-<one line to give the program's name and a brief idea of what it does.>
-
-Copyright (C) 2026 Sanford Burnham Prebys Medical Discovery Institute ("Boutros Lab")
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+Licensed under GNU General Public License version 2. See [LICENSE](LICENSE).

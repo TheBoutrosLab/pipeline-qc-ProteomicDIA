@@ -1,121 +1,90 @@
 #!/usr/bin/env nextflow
+nextflow.enable.dsl = 2
+include { summarize_mzML } from './module/summarize_mzML'
+include { extract_MS1_matrix } from './module/extract_MS1_matrix'
+include { plot_MS1_landscape } from './module/plot_MS1_landscape'
+include { summarize_search_idXML } from './module/summarize_search_idXML'
+include { summarize_filtered_idXML } from './module/summarize_filtered_idXML'
+include { summarize_ProteinGroups_ProteinProphet } from './module/summarize_ProteinGroups_ProteinProphet'
+include { summarize_ProteinGroups_Fido } from './module/summarize_ProteinGroups_Fido'
+include { summarize_ProteinGroups_Epifany } from './module/summarize_ProteinGroups_Epifany'
+include { summarize_ProteinGroups_ProtLoom } from './module/summarize_ProteinGroups_ProtLoom'
+include { summarize_EasyPQP_library } from './module/summarize_EasyPQP_library'
+include { summarize_DIANN_report } from './module/summarize_DIANN_report'
+include { collect_QCMetrics } from './module/collect_QCMetrics'
 
-nextflow.enable.dsl=2
-
-// Include processes and workflows here
-include { run_validate_PipeVal } from './external/pipeline-Nextflow-module/modules/PipeVal/validate/main.nf'
-
-include { generate_standard_filename } from './external/pipeline-Nextflow-module/modules/common/generate_standardized_filename/main.nf'
-include { indexFile } from './external/pipeline-Nextflow-module/modules/common/indexFile/main.nf'
-
-// Add this pipeline's custom modules here
-include { run_command_Tool } from './module/EXAMPLE_checksum.nf'
-
-// include { tool_name_command_name } from './module/module-name'
-
-// Log info here
-log.info """\
-        ======================================
-        T E M P L A T E - N F  P I P E L I N E
-        ======================================
-        Boutros Lab
-
-        Current Configuration:
-        - pipeline:
-            name: ${workflow.manifest.name}
-            version: ${workflow.manifest.version}
-
-        - input:
-            input a: ${params.variable_name}
-            ...
-
-        - output:
-            output a: ${params.output_path}
-            ...
-
-        - options:
-            option a: ${params.option_name}
-            ...
-
-        Tools Used:
-            tool a: ${params.docker_image_name}
-
-        ------------------------------------
-        Starting workflow...
-        ------------------------------------
-        """
-        .stripIndent()
-
-// Establish input channels here
-Channel
-    .fromList(params.samples_to_process)
-    .map { sample ->
-        return tuple(sample.id, sample.path, sample.sample_type)
-    }
-    .set { samplesToProcessChannel }
-
-Channel
-    .fromList(params.samples_to_process)
-    .map{ it -> [it['path'], indexFile(it['path'])] }
-    .flatten()
-    .set { files_to_validate_ch }
-
-// These are a few potential channels that can be mixed in
-
-/*
-Channel
-    .from(
-        params.reference,
-        params.reference_index,
-        params.reference_dict
-        )
-    .set { reference_ch }
-
-// Decription of input channel
-Channel
-    .fromPath(params.variable_name)
-    .ifEmpty { error "Cannot find: ${params.variable_name}" }
-    .set { input_ch_variable_name }
-
-files_to_validate_ch = files_to_validate_ch
-    .mix(reference_ch)
-    .mix(input_ch_variable_name)
-*/
-
-// Main workflow here
+def resolveInput(def csv, String value) {
+    if (!value?.trim()) error "Empty input path in ${csv}"
+    def result = file(value.startsWith('/') ? value : "${csv.parent}/${value}")
+    if (!result.isFile()) error "Missing input file: ${result}"
+    return result
+}
 workflow {
-
-
-    base_meta = Channel.value([
-        'log_output_dir': params.log_output_dir,
-        'output_dir': params.output_dir_base
-    ])
-
-    // Validate input files
-    run_validate_PipeVal(
-        base_meta.combine(files_to_validate_ch)
-        )
-
-    // Capture validation results
-    run_validate_PipeVal.out.validation_result
-        .collectFile(
-            name: 'input_validation.txt', newLine: true,
-            storeDir: "${params.output_dir_base}/validation"
-        )
-
-    // Add pipeline-specific workflow steps here
-    run_command_Tool(
-        run_validate_PipeVal.out.validated_file
-        )
-
-    /*
-    tool_name_command_name(
-        samplesToProcessChannel,
-        input_ch_variable_name
-        )
-    */
-
-    workflow.onComplete = {
-        WorkflowFinalizer.completeWorkflow(workflow, params);
+    mzmlRows = Channel.fromPath(params.mzml_csv).splitCsv(header: true).toList().map { [rows: it] }
+    searchRows = Channel.fromPath(params.search_idxml_csv).splitCsv(header: true).toList().map { [rows: it] }
+    filteredRows = Channel.fromPath(params.filtered_idxml_csv).splitCsv(header: true).toList().map { [rows: it] }
+    samples = mzmlRows.combine(searchRows).combine(filteredRows).flatMap { mzPayload, rawPayload, finalPayload ->
+        def mzRows = mzPayload.rows
+        def rawRows = rawPayload.rows
+        def finalRows = finalPayload.rows
+        if (!mzRows || !rawRows || !finalRows) error 'All three sample manifests must contain rows'
+        def asMap = { rows, pathColumn, source ->
+            def values = [:]
+            rows.each { row ->
+                def sample = row.sample_name?.trim()
+                if (!(sample ==~ /[A-Za-z0-9][A-Za-z0-9._-]*/) || values.containsKey(sample)) {
+                    error "Invalid or duplicate sample_name in ${source}: ${sample}"
+                }
+                values[sample] = resolveInput(file(source), row[pathColumn]?.trim())
+            }
+            values
+        }
+        def mzColumn = mzRows[0].containsKey('path') ? 'path' : 'mzML'
+        def mz = asMap(mzRows, mzColumn, params.mzml_csv)
+        def raw = asMap(rawRows, 'idXML', params.search_idxml_csv)
+        def filtered = asMap(finalRows, 'idXML', params.filtered_idxml_csv)
+        if (mz.keySet() != raw.keySet() || mz.keySet() != filtered.keySet())
+            error 'mzML, search idXML, and filtered idXML manifests must contain the same sample names'
+        rawRows.each { row ->
+            if (row.search_engine && row.search_engine != 'MSFragger')
+                error "DIA QC expects MSFragger search idXML: ${row.search_engine}"
+        }
+        mz.keySet().sort().collect { sample -> tuple(sample, mz[sample], raw[sample], filtered[sample]) }
     }
+    summarize_mzML(samples.map { sample, mzml, raw, filtered -> tuple(sample, mzml) })
+    extract_MS1_matrix(samples.map { sample, mzml, raw, filtered -> tuple(sample, mzml) })
+    plot_MS1_landscape(extract_MS1_matrix.out.matrix)
+    summarize_search_idXML(samples.map { sample, mzml, raw, filtered -> tuple(sample, raw) })
+    summarize_filtered_idXML(samples.map { sample, mzml, raw, filtered -> tuple(sample, filtered) })
+    if (params.inference_route == 'ProteinProphet') {
+        summarize_ProteinGroups_ProteinProphet(file(params.protein_groups))
+        groupMetrics = summarize_ProteinGroups_ProteinProphet.out.metrics
+    } else if (params.inference_route == 'Fido') {
+        summarize_ProteinGroups_Fido(file(params.protein_groups))
+        groupMetrics = summarize_ProteinGroups_Fido.out.metrics
+    } else if (params.inference_route == 'Epifany') {
+        summarize_ProteinGroups_Epifany(file(params.protein_groups))
+        groupMetrics = summarize_ProteinGroups_Epifany.out.metrics
+    } else {
+        protloomGroups = Channel.fromPath(params.protein_groups).splitCsv(header: true).toList().map { rows ->
+            if (!rows || rows.any { !it.sample_name || !it.groups_tsv })
+                error 'ProtLoom groups CSV needs sample_name,groups_tsv rows'
+            if ((rows*.sample_name as Set).size() != rows.size())
+                error 'ProtLoom groups CSV has duplicate sample names'
+            rows.collect { resolveInput(file(params.protein_groups), it.groups_tsv) }
+        }
+        summarize_ProteinGroups_ProtLoom(protloomGroups)
+        groupMetrics = summarize_ProteinGroups_ProtLoom.out.metrics
+    }
+    summarize_EasyPQP_library(file(params.library_tsv), file(params.export_summary_tsv))
+    summarize_DIANN_report(file(params.diann_report), file(params.mzml_csv))
+    allMetrics = summarize_mzML.out.metrics
+        .mix(summarize_search_idXML.out.metrics)
+        .mix(summarize_filtered_idXML.out.metrics)
+        .mix(groupMetrics)
+        .mix(summarize_EasyPQP_library.out.metrics)
+        .mix(summarize_DIANN_report.out.metrics)
+        .collect()
+    collect_QCMetrics(allMetrics)
+    workflow.onComplete = { WorkflowFinalizer.completeWorkflow(workflow, params) }
 }
