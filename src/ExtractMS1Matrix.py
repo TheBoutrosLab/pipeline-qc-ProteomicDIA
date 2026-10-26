@@ -65,28 +65,28 @@ def extract_peaks(spectra, mz_min, mz_max, peaks_per_scan):
     return rows, selected_scan_count
 
 
-def write_outputs(matrix_path, metadata_path, rows, sample_name, total_scans,
-                  selected_scans, mz_min, mz_max, max_scans, peaks_per_scan):
+def write_outputs(args, rows, total_scans, selected_scans):
     """Write the selected peak matrix and its selection metadata."""
-    with open(matrix_path, 'w', newline='', encoding='utf-8') as handle:
+    with open(args.matrix, 'w', newline='', encoding='utf-8') as handle:
         writer = csv.writer(handle, delimiter='\t')
         writer.writerow(['scan_index', 'rt_sec', 'mz', 'intensity'])
         for index, rt, mz, intensity in rows:
             writer.writerow([index, f'{rt:.6f}', f'{mz:.6f}', f'{intensity:.9g}'])
     metadata = {
-        'sample_name': sample_name,
+        'sample_name': args.sample_name,
         'total_ms1_scans': total_scans,
         'selected_ms1_scans': selected_scans,
         'selected_peaks': len(rows),
         'rt_min_sec': min(row[1] for row in rows),
         'rt_max_sec': max(row[1] for row in rows),
-        'mz_min': mz_min, 'mz_max': mz_max,
-        'max_scans': max_scans,
-        'peaks_per_scan': peaks_per_scan,
+        'mz_min': args.mz_min, 'mz_max': args.mz_max,
+        'max_scans': args.max_scans,
+        'peaks_per_scan': args.peaks_per_scan,
         'selection': ('Evenly spaced MS1 scans across the run; strongest positive peaks '
                       'per selected scan within the m/z range'),
     }
-    Path(metadata_path).write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
+    Path(args.metadata).write_text(json.dumps(metadata, indent=2) + '\n',
+                                   encoding='utf-8')
 
 
 def main():
@@ -106,9 +106,7 @@ def main():
     spectra, total_scans = ms1_spectra(args.input, args.max_scans)
     rows, selected_scans = extract_peaks(spectra, args.mz_min, args.mz_max,
                                          args.peaks_per_scan)
-    write_outputs(args.matrix, args.metadata, rows, args.sample_name, total_scans,
-                  selected_scans, args.mz_min, args.mz_max, args.max_scans,
-                  args.peaks_per_scan)
+    write_outputs(args, rows, total_scans, selected_scans)
 
 
 if __name__ == '__main__':
