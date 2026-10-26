@@ -21,6 +21,8 @@ if __name__ == "__main__":
         raise ValueError("Fido group is missing accessions or probability")
     metrics = Metrics(args.dataset_id, "", args.input)
     metrics.add("protein_group_count", len(groups), group="Fido")
-    metrics.distribution("proteins_per_group", [len(group["accessions"]) for group in groups], group="Fido")
-    metrics.distribution("protein_group_probability", [group["probability"] for group in groups], group="Fido")
+    group_sizes = [len(group["accessions"]) for group in groups]
+    metrics.distribution("proteins_per_group", group_sizes, group="Fido")
+    probabilities = [group["probability"] for group in groups]
+    metrics.distribution("protein_group_probability", probabilities, group="Fido")
     metrics.write(args.output)

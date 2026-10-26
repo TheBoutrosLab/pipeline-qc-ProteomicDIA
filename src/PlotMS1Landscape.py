@@ -14,6 +14,7 @@ COLORS = ('#F5C400', '#FF8900', '#F44336', '#B928DB', '#2935C4')
 
 
 def quantile(sorted_values, fraction):
+    """Interpolate a quantile from sorted numeric values."""
     position = (len(sorted_values) - 1) * fraction
     lower = math.floor(position)
     upper = math.ceil(position)
@@ -21,6 +22,7 @@ def quantile(sorted_values, fraction):
 
 
 def make_figure(rows, sample_name):
+    """Render selected MS1 peaks as a Plotly 3D stick spectrum."""
     if not rows:
         raise ValueError('MS1 peak matrix contains no peaks')
     maximum = max(row[2] for row in rows)
@@ -47,8 +49,10 @@ def make_figure(rows, sample_name):
         title=f'{sample_name} MS1 peak map',
         scene={
             'xaxis': {'title': 'm/z', 'backgroundcolor': 'white', 'gridcolor': '#D9DDE2'},
-            'yaxis': {'title': 'Retention time (s)', 'backgroundcolor': 'white', 'gridcolor': '#D9DDE2'},
-            'zaxis': {'title': f'Intensity (×10^{scale_power})', 'backgroundcolor': 'white', 'gridcolor': '#D9DDE2'},
+            'yaxis': {'title': 'Retention time (s)', 'backgroundcolor': 'white',
+                      'gridcolor': '#D9DDE2'},
+            'zaxis': {'title': f'Intensity (×10^{scale_power})',
+                      'backgroundcolor': 'white', 'gridcolor': '#D9DDE2'},
             'camera': {'eye': {'x': 1.8, 'y': -1.7, 'z': 0.75}},
             'aspectmode': 'manual', 'aspectratio': {'x': 2.3, 'y': 1.3, 'z': 0.85},
         },
@@ -59,6 +63,7 @@ def make_figure(rows, sample_name):
 
 
 def run(args):
+    """Read the peak matrix and write an offline HTML figure."""
     metadata = json.loads(Path(args.metadata).read_text(encoding='utf-8'))
     rows = []
     with open(args.matrix, newline='', encoding='utf-8') as handle:

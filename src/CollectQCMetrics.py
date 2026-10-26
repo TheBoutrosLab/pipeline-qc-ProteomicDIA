@@ -18,7 +18,9 @@ if __name__ == "__main__":
             if reader.fieldnames != FIELDS:
                 raise ValueError(f"Unexpected metric columns in {path}: {reader.fieldnames}")
             combined.extend(reader)
-    combined.sort(key=lambda row: (row["dataset_id"], row["sample_name"], row["metric_name"], row["group"], row["source_file"]))
+    combined.sort(key=lambda row: (
+        row["dataset_id"], row["sample_name"], row["metric_name"],
+        row["group"], row["source_file"]))
     with open(args.output, "w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=FIELDS, delimiter="\t")
         writer.writeheader()

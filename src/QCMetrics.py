@@ -12,10 +12,12 @@ QUANTILES = (5, 25, 50, 75, 95)
 
 
 def as_text(value):
+    """Convert an OpenMS byte string or value to text."""
     return value.decode() if isinstance(value, bytes) else str(value)
 
 
 def finite(value):
+    """Return a finite numeric value, or None for invalid input."""
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -24,6 +26,7 @@ def finite(value):
 
 
 def percentile(sorted_values, percent):
+    """Interpolate a percentile from sorted numeric values."""
     if not sorted_values:
         return None
     position = (len(sorted_values) - 1) * percent / 100
@@ -33,6 +36,7 @@ def percentile(sorted_values, percent):
 
 
 class Metrics:
+    """Collect and write long-form QC metric rows."""
     def __init__(self, dataset_id, sample_name, source):
         self.dataset_id = dataset_id
         self.sample_name = sample_name or ""
@@ -40,19 +44,24 @@ class Metrics:
         self.rows = []
 
     def add(self, name, value, unit="count", group="all"):
+        """Append one metric row when its value is available."""
         if value is None:
             return
-        self.rows.append(dict(dataset_id=self.dataset_id, sample_name=self.sample_name,
-                              metric_name=name, group=group, value=value, unit=unit,
-                              source_file=self.source))
+        self.rows.append({
+            "dataset_id": self.dataset_id, "sample_name": self.sample_name,
+            "metric_name": name, "group": group, "value": value, "unit": unit,
+            "source_file": self.source,
+        })
 
     def distribution(self, name, values, unit="", group="all"):
+        """Record the count and selected percentiles of a distribution."""
         numbers = sorted(v for value in values if (v := finite(value)) is not None)
         self.add(name + "_count", len(numbers), group=group)
         for q in QUANTILES:
             self.add(f"{name}_p{q:02d}", percentile(numbers, q), unit, group)
 
     def write(self, path):
+        """Write metric rows as a tab-separated table."""
         with open(path, "w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=FIELDS, delimiter="\t")
             writer.writeheader()
@@ -60,6 +69,7 @@ class Metrics:
 
 
 def rows(path, required=()):
+    """Yield TSV rows after checking required column names."""
     with open(path, newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
         missing = set(required) - set(reader.fieldnames or [])

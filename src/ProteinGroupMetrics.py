@@ -6,6 +6,7 @@ from QCMetrics import Metrics, as_text, finite
 
 
 def summarize_idxml(path, dataset_id, output, route):
+    """Summarize cohort protein groups from an OpenMS idXML file."""
     protein_ids = []
     peptide_ids = oms.PeptideIdentificationList()
     oms.IdXMLFile().load(str(path), protein_ids, peptide_ids)
@@ -22,5 +23,6 @@ def summarize_idxml(path, dataset_id, output, route):
     metrics = Metrics(dataset_id, "", path)
     metrics.add("protein_group_count", len(groups), group=route)
     metrics.distribution("proteins_per_group", [len(members) for members, _ in groups], group=route)
-    metrics.distribution("protein_group_probability", [probability for _, probability in groups], group=route)
+    probabilities = [probability for _, probability in groups]
+    metrics.distribution("protein_group_probability", probabilities, group=route)
     metrics.write(output)

@@ -9,6 +9,7 @@ from QCMetrics import Metrics, finite
 
 
 def run(args):
+    """Summarize acquisition timing, scan counts, windows, and signal."""
     metrics = Metrics(args.dataset_id, args.sample_name, args.input)
     times, ms1_times, ms2_times, tic, windows = [], [], [], [], []
     window_lowers, window_uppers, window_widths, window_times = [], [], [], []
@@ -65,7 +66,8 @@ def run(args):
         repeated = [rt for rt, center in window_times if center == first]
         metrics.distribution("dia_cycle_time", [b - a for a, b in zip(repeated, repeated[1:])], "s")
     else:
-        metrics.distribution("dia_cycle_time", [b - a for a, b in zip(ms1_times, ms1_times[1:])], "s")
+        cycle_times = [end - start for start, end in zip(ms1_times, ms1_times[1:])]
+        metrics.distribution("dia_cycle_time", cycle_times, "s")
     metrics.distribution("total_ion_current", tic)
     metrics.add("distinct_isolation_target_count", len(set(windows)))
     if window_lowers:

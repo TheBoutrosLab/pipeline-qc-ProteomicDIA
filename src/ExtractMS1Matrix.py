@@ -20,6 +20,7 @@ def evenly_spaced_indices(count, limit):
 
 
 def ms1_spectra(path, max_scans):
+    """Select evenly spaced MS1 spectra from an mzML file."""
     ondisk = oms.OnDiscMSExperiment()
     if ondisk.openFile(str(path)):
         metadata = ondisk.getMetaData()
@@ -40,6 +41,7 @@ def ms1_spectra(path, max_scans):
 
 
 def extract_peaks(spectra, mz_min, mz_max, peaks_per_scan):
+    """Retain the strongest valid peaks from each selected spectrum."""
     if not (math.isfinite(mz_min) and math.isfinite(mz_max) and mz_min < mz_max and
             peaks_per_scan > 0):
         raise ValueError('Invalid MS1 peak-selection limits')
@@ -65,6 +67,7 @@ def extract_peaks(spectra, mz_min, mz_max, peaks_per_scan):
 
 def write_outputs(matrix_path, metadata_path, rows, sample_name, total_scans,
                   selected_scans, mz_min, mz_max, max_scans, peaks_per_scan):
+    """Write the selected peak matrix and its selection metadata."""
     with open(matrix_path, 'w', newline='', encoding='utf-8') as handle:
         writer = csv.writer(handle, delimiter='\t')
         writer.writerow(['scan_index', 'rt_sec', 'mz', 'intensity'])
@@ -80,12 +83,14 @@ def write_outputs(matrix_path, metadata_path, rows, sample_name, total_scans,
         'mz_min': mz_min, 'mz_max': mz_max,
         'max_scans': max_scans,
         'peaks_per_scan': peaks_per_scan,
-        'selection': 'Evenly spaced MS1 scans across the run; strongest positive peaks per selected scan within the m/z range',
+        'selection': ('Evenly spaced MS1 scans across the run; strongest positive peaks '
+                      'per selected scan within the m/z range'),
     }
     Path(metadata_path).write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
 
 
 def main():
+    """Parse arguments and extract one MS1 peak matrix."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', required=True)
     parser.add_argument('--sample-name', required=True)
