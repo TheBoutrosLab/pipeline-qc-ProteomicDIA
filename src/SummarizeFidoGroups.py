@@ -19,7 +19,7 @@ if __name__ == "__main__":
     if any(not isinstance(group.get("accessions"), list) or finite(group.get("probability")) is None
            for group in groups):
         raise ValueError("Fido group is missing accessions or probability")
-    metrics = Metrics(args.dataset_id, "", args.input)
+    metrics = Metrics(args.dataset_id, "", args.input, "protein_inference")
     metrics.add("protein_group_count", len(groups), group="Fido")
     group_sizes = [len(group["accessions"]) for group in groups]
     metrics.distribution("proteins_per_group", group_sizes, group="Fido")

@@ -8,7 +8,7 @@ from QCMetrics import Metrics, rows
 
 def run(args):
     """Count library transitions, peptides, precursors, and export records."""
-    metrics = Metrics(args.dataset_id, "", args.library)
+    metrics = Metrics(args.dataset_id, "", args.library, "spectral_library")
     with open(args.library, newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
         columns = set(reader.fieldnames or [])

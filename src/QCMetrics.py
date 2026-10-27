@@ -7,7 +7,8 @@ from collections import Counter
 import pyopenms as oms
 
 
-FIELDS = ["dataset_id", "sample_name", "metric_name", "group", "value", "unit", "source_file"]
+FIELDS = ["dataset_id", "layer", "source_process", "sample_name", "search_engine",
+          "fraction_id", "metric_name", "group", "value", "unit", "status", "source_file"]
 QUANTILES = (5, 25, 50, 75, 95)
 
 
@@ -37,28 +38,43 @@ def percentile(sorted_values, percent):
 
 class Metrics:
     """Collect and write long-form QC metric rows."""
-    def __init__(self, dataset_id, sample_name, source):
-        self.dataset_id = dataset_id
+    def __init__(self, dataset_id, sample_name, source, layer, **dimensions):
+        self.context = {
+            "dataset_id": dataset_id, "layer": layer,
+            "source_process": dimensions.get("source_process", ""),
+            "search_engine": dimensions.get("search_engine", ""),
+            "fraction_id": dimensions.get("fraction_id", ""),
+        }
         self.sample_name = sample_name or ""
         self.source = str(source)
         self.rows = []
 
-    def add(self, name, value, unit="count", group="all"):
-        """Append one metric row when its value is available."""
-        if value is None:
+    def add(self, name, value, unit="count", group="all", status="available"):
+        """Append a metric row, including an explicit unavailable status."""
+        if value is None and status == "available":
             return
         self.rows.append({
-            "dataset_id": self.dataset_id, "sample_name": self.sample_name,
-            "metric_name": name, "group": group, "value": value, "unit": unit,
-            "source_file": self.source,
+            **self.context, "sample_name": self.sample_name,
+            "metric_name": name, "group": group,
+            "value": "" if value is None else value, "unit": unit,
+            "status": status, "source_file": self.source,
         })
+
+    def unavailable(self, name, unit="", group="all"):
+        """Record a missing source feature without treating it as zero."""
+        self.add(name, None, unit, group, "unavailable")
 
     def distribution(self, name, values, unit="", group="all"):
         """Record the count and selected percentiles of a distribution."""
+        values = list(values)
         numbers = sorted(v for value in values if (v := finite(value)) is not None)
         self.add(name + "_count", len(numbers), group=group)
+        self.add(name + "_missing_count", len(values) - len(numbers), group=group)
         for q in QUANTILES:
-            self.add(f"{name}_p{q:02d}", percentile(numbers, q), unit, group)
+            if numbers:
+                self.add(f"{name}_p{q:02d}", percentile(numbers, q), unit, group)
+            else:
+                self.unavailable(f"{name}_p{q:02d}", unit, group)
 
     def write(self, path):
         """Write metric rows as a tab-separated table."""

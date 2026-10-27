@@ -1,0 +1,3 @@
+sample_name,search_engine,route,fraction_id,path
+LFQ_Orbitrap_AIF_Ecoli_01,MSFragger,MSBooster,1,$TEST_DATA_DIR/ecoli_dia/metapipeline-ProteomicDIA-ProtLoom/metapipeline-ProteomicDIA-1.2.0/ecoli_dia/main_workflow/validate-ProteomicPSM-2.3.1/LFQ_Orbitrap_AIF_Ecoli_01/MSBooster/output/engine_MSFragger/run_01-fraction_1_edited.pin
+LFQ_Orbitrap_AIF_Ecoli_02,MSFragger,MSBooster,1,$TEST_DATA_DIR/ecoli_dia/metapipeline-ProteomicDIA-ProtLoom/metapipeline-ProteomicDIA-1.2.0/ecoli_dia/main_workflow/validate-ProteomicPSM-2.3.1/LFQ_Orbitrap_AIF_Ecoli_02/MSBooster/output/engine_MSFragger/run_01-fraction_1_edited.pin
