@@ -12,6 +12,6 @@ if __name__ == "__main__":
     parser.add_argument("--sample-name", required=True)
     parser.add_argument("--dataset-id", required=True)
     args = parser.parse_args()
-    metrics = Metrics(args.dataset_id, args.sample_name, args.input)
+    metrics = Metrics(args.dataset_id, args.sample_name, args.input, "raw_identification")
     score_summary(metrics, args.input)
     metrics.write(args.output)

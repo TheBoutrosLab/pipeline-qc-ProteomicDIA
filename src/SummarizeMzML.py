@@ -10,7 +10,7 @@ from QCMetrics import Metrics, finite
 
 def run(args):
     """Summarize acquisition timing, scan counts, windows, and signal."""
-    metrics = Metrics(args.dataset_id, args.sample_name, args.input)
+    metrics = Metrics(args.dataset_id, args.sample_name, args.input, "acquisition")
     times, ms1_times, ms2_times, tic, windows = [], [], [], [], []
     window_lowers, window_uppers, window_widths, window_times = [], [], [], []
     ms2_per_cycle = []

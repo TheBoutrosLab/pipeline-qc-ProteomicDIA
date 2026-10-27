@@ -22,7 +22,7 @@ if __name__ == "__main__":
                 raise ValueError(
                     f"ProtLoom group {group_id} has inconsistent members across samples")
             groups[group_id] = members
-    metrics = Metrics(args.dataset_id, "", ",".join(args.input_files))
+    metrics = Metrics(args.dataset_id, "", ",".join(args.input_files), "protein_inference")
     metrics.add("protein_group_count", len(groups), group="ProtLoom")
     group_sizes = [len(members) for members in groups.values()]
     metrics.distribution("proteins_per_group", group_sizes, group="ProtLoom")

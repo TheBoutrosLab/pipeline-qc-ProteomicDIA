@@ -74,7 +74,7 @@ def summarize(args):
     if not run_rows:
         raise ValueError("DIA-NN report is empty")
     cohort_precursors = set().union(*precursors.values())
-    metrics = Metrics(args.dataset_id, "", args.input)
+    metrics = Metrics(args.dataset_id, "", args.input, "quantification")
     metrics.add("diann_run_count", len(run_rows))
     metrics.add("cohort_precursor_count", len(cohort_precursors))
     for run in sorted(run_rows):

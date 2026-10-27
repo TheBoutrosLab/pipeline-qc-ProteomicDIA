@@ -20,7 +20,7 @@ def summarize_idxml(path, dataset_id, output, route):
             if probability is None or not members:
                 raise ValueError(f"Invalid {route} protein group in {path}")
             groups.append((members, probability))
-    metrics = Metrics(dataset_id, "", path)
+    metrics = Metrics(dataset_id, "", path, "protein_inference")
     metrics.add("protein_group_count", len(groups), group=route)
     metrics.distribution("proteins_per_group", [len(members) for members, _ in groups], group=route)
     probabilities = [probability for _, probability in groups]

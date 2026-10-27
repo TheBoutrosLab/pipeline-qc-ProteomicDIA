@@ -5,6 +5,7 @@ include { extract_MS1_matrix } from './module/extract_MS1_matrix'
 include { plot_MS1_landscape } from './module/plot_MS1_landscape'
 include { summarize_search_idXML } from './module/summarize_search_idXML'
 include { summarize_filtered_idXML } from './module/summarize_filtered_idXML'
+include { summarize_PSMFeatures } from './module/summarize_PSMFeatures'
 include { summarize_ProteinGroups_ProteinProphet } from './module/summarize_ProteinGroups_ProteinProphet'
 include { summarize_ProteinGroups_Fido } from './module/summarize_ProteinGroups_Fido'
 include { summarize_ProteinGroups_Epifany } from './module/summarize_ProteinGroups_Epifany'
@@ -56,6 +57,38 @@ workflow {
     plot_MS1_landscape(extract_MS1_matrix.out.matrix)
     summarize_search_idXML(samples.map { sample, mzml, raw, filtered -> tuple(sample, raw) })
     summarize_filtered_idXML(samples.map { sample, mzml, raw, filtered -> tuple(sample, filtered) })
+    if (params.psm_features_csv) {
+        featureRows = Channel.fromPath(params.psm_features_csv).splitCsv(header: true)
+            .toList().map { [rows: it] }
+        featureSamples = samples.map { sample, mzml, raw, filtered -> sample }
+            .collect().map { [names: it] }
+        featureEntries = featureRows.combine(featureSamples).flatMap { rowPayload, samplePayload ->
+            def rows = rowPayload.rows
+            def sampleNames = samplePayload.names
+            def safe = { value -> value ==~ /[A-Za-z0-9][A-Za-z0-9._-]*/ }
+            def seen = [] as Set
+            rows.collect { row ->
+                def sample = row.sample_name?.trim()
+                def engine = row.search_engine?.trim()
+                def route = row.route?.trim()
+                def fraction = row.fraction_id?.trim() ?: ''
+                if (!safe(sample) || !(sample in sampleNames) || engine != 'MSFragger' ||
+                    !(route in ['MSBooster', 'PSMFeatureExtractor']) ||
+                    (route == 'MSBooster' && !fraction) ||
+                    (fraction && !safe(fraction)) || !seen.add([sample, engine, route, fraction]))
+                    error "Invalid or duplicate PSM feature manifest row: ${row}"
+                def input = resolveInput(file(params.psm_features_csv), row.path?.trim())
+                if ((route == 'MSBooster' && !input.name.endsWith('.pin')) ||
+                    (route == 'PSMFeatureExtractor' && !input.name.endsWith('.idXML')))
+                    error "Wrong PSM feature file type for ${route}: ${input}"
+                tuple(sample, engine, route, fraction, input)
+            }
+        }
+        summarize_PSMFeatures(featureEntries)
+        featureMetrics = summarize_PSMFeatures.out.metrics
+    } else {
+        featureMetrics = Channel.empty()
+    }
     if (params.inference_route == 'ProteinProphet') {
         summarize_ProteinGroups_ProteinProphet(file(params.protein_groups))
         groupMetrics = summarize_ProteinGroups_ProteinProphet.out.metrics
@@ -81,10 +114,10 @@ workflow {
     allMetrics = summarize_mzML.out.metrics
         .mix(summarize_search_idXML.out.metrics)
         .mix(summarize_filtered_idXML.out.metrics)
+        .mix(featureMetrics)
         .mix(groupMetrics)
         .mix(summarize_EasyPQP_library.out.metrics)
         .mix(summarize_DIANN_report.out.metrics)
         .collect()
     collect_QCMetrics(allMetrics)
-    workflow.onComplete = { WorkflowFinalizer.completeWorkflow(workflow, params) }
 }

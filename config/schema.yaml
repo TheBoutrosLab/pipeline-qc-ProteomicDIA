@@ -18,6 +18,11 @@ filtered_idxml_csv:
   mode: 'r'
   required: true
   help: 'CSV with sample_name,idXML for final filtered validation results'
+psm_features_csv:
+  type: 'Path'
+  mode: 'r'
+  required: false
+  help: 'Optional sample_name,search_engine,route,fraction_id,path manifest for published MSBooster PIN or PSMFeatureExtractor idXML files'
 inference_route:
   type: 'String'
   choices: ['ProteinProphet', 'Fido', 'Epifany', 'ProtLoom']
