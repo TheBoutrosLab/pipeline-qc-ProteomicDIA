@@ -82,7 +82,7 @@
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
       <li class="breadcrumb-item active">Inputs</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/bc575f063340b26e333a242cd3e838f27f55e264/README.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/7f22690229c8aaa28f89fefae628e2933793cbce/README.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -108,6 +108,12 @@ sample_02,MSFragger,/data/sample_02_MSFragger.idXML
 sample_01,/data/sample_01_MSFragger_filter.idXML
 sample_02,/data/sample_02_MSFragger_filter.idXML
 </code></pre>
+<p><strong>Optional PSM feature CSV</strong> (<code>psm_features_csv</code>):</p>
+<pre><code class="language-csv">sample_name,search_engine,route,fraction_id,path
+sample_01,MSFragger,MSBooster,1,/data/validation/sample_01/MSBooster/output/engine_MSFragger/run_01-fraction_1_edited.pin
+sample_02,MSFragger,PSMFeatureExtractor,,/data/validation/sample_02/OpenMS-3.5.0/output/sample_02_MSFragger_featureExtracted.idXML
+</code></pre>
+<p><code>route</code> is <code>MSBooster</code> or <code>PSMFeatureExtractor</code>. The manifest is optional; omit the parameter or use a header-only CSV when the validation run did not publish feature files. List one row per published file. The <code>fraction_id</code> is required to distinguish fraction-level MSBooster PIN files and may be blank for a sample-level PSMFeatureExtractor idXML. Feature samples must appear in the mzML manifest. Paths may be absolute or relative to the feature CSV.</p>
 <p>The search CSV can be the metapipeline's <code>validation.csv</code>. Create the filtered CSV from the final validation outputs; the metapipeline does not currently publish it. Sample names must be unique and identical across all three CSVs.</p>
 <table>
 <thead>
@@ -132,6 +138,10 @@ sample_02,/data/sample_02_MSFragger_filter.idXML
 <tr>
 <td><code>filtered_idxml_csv</code></td>
 <td>Final filtered validation idXML manifest.</td>
+</tr>
+<tr>
+<td><code>psm_features_csv</code></td>
+<td>Optional published MSBooster PIN or PSMFeatureExtractor idXML manifest.</td>
 </tr>
 <tr>
 <td><code>inference_route</code></td>

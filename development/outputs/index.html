@@ -82,7 +82,7 @@
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
       <li class="breadcrumb-item active">Outputs</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/bc575f063340b26e333a242cd3e838f27f55e264/README.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/7f22690229c8aaa28f89fefae628e2933793cbce/README.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -125,6 +125,10 @@
 <td>Final filtered identification metrics.</td>
 </tr>
 <tr>
+<td><code>output/PSMFeatures/&lt;sample_name&gt;_&lt;search_engine&gt;_&lt;route&gt;_&lt;fraction_id-or-all&gt;_PSMFeatures_metrics.tsv</code></td>
+<td>Optional feature metrics for one published file.</td>
+</tr>
+<tr>
 <td><code>output/ProteinGroups/&lt;dataset_id&gt;_ProteinGroups_metrics.tsv</code></td>
 <td>Cohort inference metrics.</td>
 </tr>
@@ -142,7 +146,7 @@
 </tr>
 </tbody>
 </table>
-<p>Each metric row records <code>dataset_id</code>, <code>sample_name</code> (empty for cohort metrics), <code>metric_name</code>, <code>group</code>, <code>value</code>, <code>unit</code>, and <code>source_file</code>. Programmed LC gradient duration and retention-time error are not derived from these inputs.</p>
+<p>Each metric row records <code>dataset_id</code>, <code>layer</code>, <code>source_process</code>, <code>sample_name</code> (empty for cohort metrics), <code>search_engine</code>, <code>fraction_id</code>, <code>metric_name</code>, <code>group</code>, <code>value</code>, <code>unit</code>, <code>status</code>, and <code>source_file</code>. The stable <code>layer</code> values are <code>acquisition</code>, <code>raw_identification</code>, <code>psm_features</code>, <code>validated_identification</code>, <code>protein_inference</code>, <code>spectral_library</code>, and <code>quantification</code>. <code>source_process</code> identifies MSBooster or PSMFeatureExtractor where applicable; absent feature values use <code>status=unavailable</code> rather than zero. Programmed LC gradient duration is not derived from these inputs.</p>
               
             </div>
           </div><footer>
