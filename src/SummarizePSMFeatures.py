@@ -114,8 +114,10 @@ def summarize_pin_categories(metrics, columns, by_group, groups):
             categories.update(counts[group])
         categories.difference_update(("missing", "invalid"))
         for group in groups:
-            for category in sorted(categories, key=lambda item: (not item.isdigit(),
-                                                                  int(item) if item.isdigit() else item)):
+            for category in sorted(
+                    categories,
+                    key=lambda item: (not item.isdigit(),
+                                      int(item) if item.isdigit() else item)):
                 metrics.add(f"{prefix}_{category}_psm_count", counts[group][category], group=group)
             for issue in ("missing", "invalid"):
                 metrics.add(f"{prefix}_{issue}_psm_count", counts[group][issue], group=group)
