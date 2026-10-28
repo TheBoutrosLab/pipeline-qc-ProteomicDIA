@@ -4,7 +4,7 @@
 import argparse
 import csv
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import pyopenms as oms
 
@@ -69,6 +69,58 @@ def idxml_rows(path):
     return columns, rows
 
 
+def pin_category(row, fields, kind):
+    """Decode a PIN enzyme or one-hot charge category, or its data issue."""
+    if kind == "missed_cleavages":
+        value = finite(row.get(fields[0]))
+        if value is None:
+            return "missing" if not row.get(fields[0]) else "invalid"
+        return str(int(value)) if value >= 0 and value.is_integer() else "invalid"
+    if kind == "cleavage_specificity":
+        values = [finite(row.get(field)) for field in fields]
+        if any(value is None for value in values):
+            return "missing" if any(not row.get(field) for field in fields) else "invalid"
+        if any(value not in (0, 1) for value in values):
+            return "invalid"
+        return ("full", "semi", "none")[2 - int(sum(values))]
+    values = [finite(row.get(field)) for field in fields]
+    if any(value is None for value in values):
+        return "missing" if any(not row.get(field) for field in fields) else "invalid"
+    if any(value not in (0, 1) for value in values) or sum(values) != 1:
+        return "invalid"
+    return str(int(re.fullmatch(r"charge([0-9]+)", fields[values.index(1)], re.I).group(1)))
+
+
+def summarize_pin_categories(metrics, columns, by_group, groups):
+    """Count PIN PSMs by missed cleavages, enzyme specificity, and charge."""
+    charge_fields = [name for name in columns if re.fullmatch(r"charge[0-9]+", name, re.I)]
+    specifications = (
+        ("missed_cleavages", ["enzInt"] if "enzInt" in columns else [], ()),
+        ("cleavage_specificity", ["enzN", "enzC"]
+         if all(name in columns for name in ("enzN", "enzC")) else [],
+         ("full", "semi", "none")),
+        ("charge", charge_fields, ()),
+    )
+    for kind, fields, fixed_categories in specifications:
+        prefix = f"feature_{kind}"
+        if not fields:
+            for group in groups:
+                metrics.unavailable(prefix + "_psm_count", "count", group)
+            continue
+        counts = {group: Counter(pin_category(row, fields, kind)
+                                 for row in by_group[group]) for group in groups}
+        categories = set(fixed_categories)
+        for group in groups:
+            categories.update(counts[group])
+        categories.difference_update(("missing", "invalid"))
+        for group in groups:
+            for category in sorted(categories, key=lambda item: (not item.isdigit(),
+                                                                  int(item) if item.isdigit() else item)):
+                metrics.add(f"{prefix}_{category}_psm_count", counts[group][category], group=group)
+            for issue in ("missing", "invalid"):
+                metrics.add(f"{prefix}_{issue}_psm_count", counts[group][issue], group=group)
+
+
 def summarize(args):
     """Write compact feature distributions by target/decoy class."""
     metrics = Metrics(args.dataset_id, args.sample_name, args.input, "psm_features",
@@ -83,6 +135,8 @@ def summarize(args):
         by_group[label].append(values)
     for group in groups:
         metrics.add("feature_psm_count", len(by_group[group]), group=group)
+    if args.route == "MSBooster":
+        summarize_pin_categories(metrics, columns, by_group, groups)
     feature_columns = [name for name in columns if selected_feature(name)]
     metric_names = [metric_key(name) for name in feature_columns]
     if len(metric_names) != len(set(metric_names)):

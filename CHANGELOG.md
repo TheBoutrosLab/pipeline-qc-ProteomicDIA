@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Count pre-validation MSBooster PSMs by missed cleavages, enzyme cleavage specificity, and precursor charge for all, target, and decoy groups.
+
 ## [1.1.0] - 2026-10-27
 
 ### Added
