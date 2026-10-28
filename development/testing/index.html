@@ -82,7 +82,7 @@
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
       <li class="breadcrumb-item active">Testing</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/243abc0978819719856ca02dcc44ced709c9f3b0/README.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/042ddec68f7dcaa5f212670e8d5bd1fc1fe7c289/README.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -91,10 +91,10 @@
             <div class="section" itemprop="articleBody">
               
                 <h2 id="testing">Testing</h2>
-<p>The UCLA nf-test suite has integration cases for ProteinProphet, Fido, Epifany, and ProtLoom. All four use the same two <em>E. coli</em> mzML files and their route-specific metapipeline outputs. Set <code>TEST_DATA_DIR</code> in a local <code>.env</code> file using <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/243abc0978819719856ca02dcc44ced709c9f3b0/.env-template"><code>.env-template</code></a>, then run a case inside a Slurm job:</p>
+<p>The UCLA nf-test suite has integration cases for ProteinProphet, Fido, Epifany, and ProtLoom. All four use the same two <em>E. coli</em> mzML files and their route-specific metapipeline outputs. Set <code>TEST_DATA_DIR</code> in a local <code>.env</code> file using <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/042ddec68f7dcaa5f212670e8d5bd1fc1fe7c289/.env-template"><code>.env-template</code></a>, then run a case inside a Slurm job:</p>
 <pre><code class="language-bash">bash test/run-nftest.sh test-integration-ProteinProphet
 </code></pre>
-<p>See <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/243abc0978819719856ca02dcc44ced709c9f3b0/test/README.md">test/README.md</a> for the other case names and test-data layout. These tests require the lab's external metapipeline outputs; they are not self-contained fixtures. <code>python -m unittest discover -s test -p "test_psm_features.py"</code> checks both published feature formats with synthetic inputs.</p>
+<p>See <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/042ddec68f7dcaa5f212670e8d5bd1fc1fe7c289/test/README.md">test/README.md</a> for the other case names and test-data layout. These tests require the lab's external metapipeline outputs; they are not self-contained fixtures. <code>python -m unittest discover -s test -p "test_psm_features.py"</code> checks both published feature formats with synthetic inputs.</p>
               
             </div>
           </div><footer>
