@@ -26,3 +26,8 @@ cases:
     nf_script: main.nf
     nf_config: test/test-integration-ProtLoom/test.config
     verbose: true
+  - name: test-integration-HeLa-ProteinProphet
+    message: Summarize HeLa dia-PASEF acquisition and cohort ProteinProphet outputs
+    nf_script: main.nf
+    nf_config: test/test-integration-HeLa-ProteinProphet/test.config
+    verbose: true

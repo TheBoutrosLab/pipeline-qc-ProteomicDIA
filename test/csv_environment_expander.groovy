@@ -30,8 +30,8 @@ class NFTestCsvTools {
         }
     }
 
-    /** Check that every file referenced by a test CSV exists before launching the workflow. */
-    void requireInputFiles(Object csvPath, String pathColumn) {
+    /** Check that every input path referenced by a test CSV exists. */
+    void requireInputFiles(Object csvPath, String pathColumn, boolean allowDirectory = false) {
         def csvFile = new File(csvPath.toString())
         def lines = Files.readAllLines(csvFile.toPath(), StandardCharsets.UTF_8)
         if (!lines) {
@@ -52,7 +52,7 @@ class NFTestCsvTools {
             }
             def input = new File(value)
             if (!input.isAbsolute()) input = new File(csvFile.parentFile, value)
-            if (!input.isFile()) {
+            if (!(input.isFile() || (allowDirectory && input.isDirectory()))) {
                 throw new IllegalArgumentException(
                     "Missing ${pathColumn} input from ${csvFile} row ${rowIndex + 2}: ${input}")
             }

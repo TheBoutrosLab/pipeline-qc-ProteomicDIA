@@ -5,6 +5,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Read original Bruker `.d` acquisitions for DIA scan and MS1 QC through pyOpenMS 3.6 while retaining reconstructed mzML paths for search and DIA-NN sample mapping.
+- Add a HeLa dia-PASEF ProteinProphet integration case with verified published inputs and map DIA-NN raw-acquisition run names to their sample names.
+
 ## [1.1.1] - 2026-10-28
 
 ### Added

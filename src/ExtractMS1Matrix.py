@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pyopenms as oms
 
+from AcquisitionReader import is_bruker, load_acquisition
+
 def evenly_spaced_indices(count, limit):
     """Choose MS1 scans across the complete run, including both endpoints."""
     if count <= limit:
@@ -20,7 +22,15 @@ def evenly_spaced_indices(count, limit):
 
 
 def ms1_spectra(path, max_scans):
-    """Select evenly spaced MS1 spectra from an mzML file."""
+    """Select evenly spaced MS1 spectra from mzML or Bruker .d input."""
+    if is_bruker(path):
+        experiment = load_acquisition(path, ms1_only=True)
+        spectra = [spectrum for spectrum in experiment.getSpectra()
+                   if spectrum.getMSLevel() == 1]
+        if not spectra:
+            raise ValueError('Bruker .d acquisition has no MS1 spectra')
+        selected = evenly_spaced_indices(len(spectra), max_scans)
+        return (spectra[i] for i in selected), len(spectra)
     ondisk = oms.OnDiscMSExperiment()
     if ondisk.openFile(str(path)):
         metadata = ondisk.getMetaData()

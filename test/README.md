@@ -22,3 +22,10 @@ The runner reads a Git-ignored `.env` file with `TEST_DATA_DIR` for these cases.
 Nextflow 24.10.6 and the v1 syntax parser. It writes work and output to
 `/scratch/$SLURM_JOB_ID/<test-case>` and retains them for inspection.
 These tests use the pipeline's configured container profile on the cluster.
+
+The `test-integration-HeLa-ProteinProphet` case uses the original HeLa dia-PASEF `.d`
+directory for acquisition and MS1 QC, with the diaTracer reconstructed mzML for sample
+mapping. Its manifests reference the published HeLa search, validation, and library
+outputs under `$TEST_DATA_DIR/hela_diapasef/output`, including the published DIA-NN
+report. The report's `Run` value is the original Bruker `.d` stem, which the QC reader
+maps to `hela_50ng_5_6min` through `acquisition_path`.
