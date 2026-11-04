@@ -1,6 +1,6 @@
 # pipeline-qc-ProteomicDIA
 
-This Nextflow DSL2 pipeline collects quality-control metrics from a completed `metapipeline-ProteomicDIA` cohort. It summarizes each sample's mzML, unfiltered MSFragger search idXML, and final filtered idXML; the selected protein-inference route; the cohort EasyPQP library; and the DIA-NN report. It also writes an interactive 3D MS1 peak map for each mzML.
+This Nextflow DSL2 pipeline collects quality-control metrics from a completed `metapipeline-ProteomicDIA` cohort. It summarizes each sample's mzML or original Bruker `.d` acquisition, unfiltered MSFragger search idXML, and final filtered idXML; the selected protein-inference route; the cohort EasyPQP library; and the DIA-NN report. It also writes an interactive 3D MS1 peak map for each acquisition.
 
 ## How to run
 
@@ -14,11 +14,11 @@ This Nextflow DSL2 pipeline collects quality-control metrics from a completed `m
    nextflow run . -c /path/to/qc.config -profile apptainer
    ```
 
-The `standard` and `docker` profiles use Docker; `apptainer` uses Apptainer. The OpenMS processes use `ghcr.io/theboutroslab/pyopenms:3.5.0`; the HTML plot uses `multiqc/multiqc:v1.35`, which provides Plotly. Set `work_dir` to scratch storage when processing large mzML files.
+The `standard` and `docker` profiles use Docker; `apptainer` uses Apptainer. The OpenMS processes use `ghcr.io/theboutroslab/pyopenms:3.6.0`; the HTML plot uses `multiqc/multiqc:v1.35`, which provides Plotly. The selected pyOpenMS image must expose `BrukerTimsFile` to read `.d` directories. Set `work_dir` to scratch storage when processing large acquisitions.
 
 ## Inputs
 
-Three CSV manifests identify the same set of samples. Paths in these CSVs may be absolute or relative to the CSV directory. The current pipeline supports one mzML per sample; `fraction_id` is retained for future fraction support.
+Three CSV manifests identify the same set of samples. Paths in these CSVs may be absolute or relative to the CSV directory. The current pipeline supports one acquisition per sample; `fraction_id` is retained for future fraction support.
 
 **mzML CSV** (`mzml_csv`):
 
@@ -28,7 +28,14 @@ sample_01,1,/data/sample_01.mzML
 sample_02,1,/data/sample_02.mzML
 ```
 
-The two-column `sample_name,mzML` form is also accepted.
+For Bruker data, keep `path` pointed at the reconstructed mzML used for search and DIA-NN run-name matching, and add `acquisition_path` for the original `.d` directory:
+
+```csv
+sample_name,fraction_id,path,acquisition_path
+hela_01,1,/data/hela_01_reconstructed.mzML,/data/hela_01.d
+```
+
+Acquisition and MS1 QC use `acquisition_path` when present; otherwise they use `path`. The two-column `sample_name,mzML` form is also accepted for mzML-only runs. The `.d` directory must be accessible in the container.
 
 **Unfiltered search idXML CSV** (`search_idxml_csv`):
 
@@ -61,7 +68,7 @@ The search CSV can be the metapipeline's `validation.csv`. Create the filtered C
 | Parameter | Description |
 | --- | --- |
 | `dataset_id` | Cohort identifier used in the output path and metric filenames. |
-| `mzml_csv` | Per-sample mzML manifest. |
+| `mzml_csv` | Per-sample reconstructed mzML path and optional original acquisition path. |
 | `search_idxml_csv` | Unfiltered MSFragger search idXML manifest. |
 | `filtered_idxml_csv` | Final filtered validation idXML manifest. |
 | `psm_features_csv` | Optional published MSBooster PIN or PSMFeatureExtractor idXML manifest. |
@@ -69,10 +76,10 @@ The search CSV can be the metapipeline's `validation.csv`. Create the filtered C
 | `protein_groups` | Cohort ProteinProphet or Epifany idXML; cohort Fido groups JSON; or a ProtLoom CSV described below. |
 | `library_tsv` | Published cohort EasyPQP library TSV. |
 | `export_summary_tsv` | Validation EasyPQP export summary TSV with `metric,count` columns. |
-| `diann_report` | DIA-NN main `report.tsv`. Its `Run` values must match a sample name, mzML filename, or mzML stem. |
+| `diann_report` | DIA-NN main `report.tsv`. Its `Run` values must match a sample name, mzML filename or stem, or acquisition filename or stem. |
 | `output_dir` | Root directory for QC results. |
 | `work_dir` | Optional Nextflow work directory. |
-| `pyopenms_version` | pyOpenMS image tag; default `3.5.0`. |
+| `pyopenms_version` | pyOpenMS image tag; default `3.6.0`. |
 | `docker_image_plotly` | Plotly image; default `multiqc/multiqc:v1.35`. |
 | `base_resource_update` | Optional process CPU and memory overrides. |
 
@@ -88,8 +95,8 @@ sample_02,/data/validation/sample_02/ProtLoom-0.2.3/output/sample_02_groups.tsv
 
 | Process | Input | Result |
 | --- | --- | --- |
-| `summarize_mzML` | One mzML per sample | Acquisition duration, scan counts and rates, cycle timing, isolation windows, and TIC. |
-| `extract_MS1_matrix` | One mzML per sample | Bounded RT, m/z, and intensity matrix plus selection metadata. |
+| `summarize_mzML` | One mzML or Bruker `.d` acquisition per sample | Acquisition duration, scan counts and rates, cycle timing, isolation windows, and TIC. |
+| `extract_MS1_matrix` | One mzML or Bruker `.d` acquisition per sample | Bounded RT, m/z, and intensity matrix plus selection metadata. |
 | `plot_MS1_landscape` | MS1 matrix and metadata | Offline interactive 3D stick spectrum in HTML. |
 | `summarize_search_idXML` | One unfiltered search idXML per sample | Candidate and best-hit counts, search-score percentiles, and charge counts. |
 | `summarize_filtered_idXML` | One final filtered idXML per sample | Accepted PSM and distinct peptide counts and score percentiles. |
@@ -100,6 +107,8 @@ sample_02,/data/validation/sample_02/ProtLoom-0.2.3/output/sample_02_groups.tsv
 | `collect_QCMetrics` | All stage metric TSVs | Combined QC metric table. |
 
 The MS1 matrix contains up to 120 strongest positive peaks from each of 350 evenly spaced MS1 scans within m/z 300–1200. The HTML embeds Plotly and works offline. The plot colors encode within-sample log-intensity percentiles: yellow (0–25), orange (25–50), red (50–75), purple (75–95), and blue (95–100). Colors therefore do not represent the same absolute intensity across samples. Continuous-value metric summaries include nonmissing and missing counts and the 5th, 25th, 50th, 75th, and 95th percentiles. PSM feature summaries use actual PIN columns or OpenMS `extra_features` metadata: `deltamass`, `dm`, `absdm`, RT delta/difference fields, and spectral angle, entropy, correlation, or cosine fields when present. The original feature name is retained in `metric_name`. `deltamass` is an m/z difference; when `CalcMass` is present, the pipeline also reports signed and absolute error in ppm. Other source feature units are left blank unless established by the source. No RT delta is inferred from a search idXML lacking a prediction feature; its status is `unavailable`. Target and decoy are summarized separately alongside all PSMs. Feature-derived mass error is labeled by `source_process` and remains distinct from any raw search metric.
+
+Bruker `.d` reading loads an OpenMS experiment in memory before MS1 scan selection. Allocate sufficient memory for full MS1 frames. Raw Bruker frame/window-spectrum counts can differ from counts in diaTracer's reconstructed mzML.
 
 ## Outputs
 

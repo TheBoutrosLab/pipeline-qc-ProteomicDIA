@@ -26,7 +26,11 @@ def summarize(args):
         for row in samples:
             name = row['sample_name']
             mzml = Path(row[mzml_column])
-            for key in (name, mzml.name, mzml.stem):
+            acquisition = Path(row['acquisition_path']) if row.get('acquisition_path') else None
+            keys = (name, mzml.name, mzml.stem)
+            if acquisition:
+                keys += (acquisition.name, acquisition.stem)
+            for key in keys:
                 if key in sample_lookup and sample_lookup[key] != name:
                     raise ValueError(f"Ambiguous DIA-NN run key: {key}")
                 sample_lookup[key] = name

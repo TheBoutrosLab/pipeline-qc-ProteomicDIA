@@ -1,0 +1,2 @@
+sample_name,search_engine,route,fraction_id,path
+hela_50ng_5_6min,MSFragger,MSBooster,1,$TEST_DATA_DIR/hela_diapasef/output/validate-ProteomicPSM/validate-ProteomicPSM-2.4.0/hela_50ng_5_6min/MSBooster/output/engine_MSFragger/run_01-fraction_1_edited.pin

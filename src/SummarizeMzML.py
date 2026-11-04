@@ -3,8 +3,7 @@
 
 import argparse
 
-import pyopenms as oms
-
+from AcquisitionReader import load_acquisition
 from QCMetrics import Metrics, finite
 
 
@@ -15,8 +14,7 @@ def run(args):
     window_lowers, window_uppers, window_widths, window_times = [], [], [], []
     ms2_per_cycle = []
     cycle_ms2 = 0
-    experiment = oms.MSExperiment()
-    oms.MzMLFile().load(str(args.input), experiment)
+    experiment = load_acquisition(args.input)
     for spectrum in experiment.getSpectra():
         level = spectrum.getMSLevel()
         rt = finite(spectrum.getRT())

@@ -20,6 +20,16 @@ def resolveInput(def csv, String value) {
     if (!result.isFile()) error "Missing input file: ${result}"
     return result
 }
+def resolveAcquisition(def csv, String value) {
+    if (!value?.trim()) error "Empty acquisition path in ${csv}"
+    def result = file(value.startsWith('/') ? value : "${csv.parent}/${value}")
+    def name = result.name.toLowerCase()
+    if (!((result.isFile() && name.endsWith('.mzml')) ||
+          (result.isDirectory() && name.endsWith('.d')))) {
+        error "Acquisition input must be an mzML file or Bruker .d directory: ${result}"
+    }
+    return result
+}
 workflow {
     mzmlRows = Channel.fromPath(params.mzml_csv).splitCsv(header: true).toList().map { [rows: it] }
     searchRows = Channel.fromPath(params.search_idxml_csv).splitCsv(header: true).toList().map { [rows: it] }
@@ -42,6 +52,12 @@ workflow {
         }
         def mzColumn = mzRows[0].containsKey('path') ? 'path' : 'mzML'
         def mz = asMap(mzRows, mzColumn, params.mzml_csv)
+        def acquisition = [:]
+        mzRows.each { row ->
+            def sample = row.sample_name?.trim()
+            def path = row.acquisition_path?.trim() ?: row[mzColumn]?.trim()
+            acquisition[sample] = resolveAcquisition(file(params.mzml_csv), path)
+        }
         def raw = asMap(rawRows, 'idXML', params.search_idxml_csv)
         def filtered = asMap(finalRows, 'idXML', params.filtered_idxml_csv)
         if (mz.keySet() != raw.keySet() || mz.keySet() != filtered.keySet())
@@ -50,17 +66,23 @@ workflow {
             if (row.search_engine && row.search_engine != 'MSFragger')
                 error "DIA QC expects MSFragger search idXML: ${row.search_engine}"
         }
-        mz.keySet().sort().collect { sample -> tuple(sample, mz[sample], raw[sample], filtered[sample]) }
+        mz.keySet().sort().collect { sample ->
+            tuple(sample, mz[sample], acquisition[sample], raw[sample], filtered[sample])
+        }
     }
-    summarize_mzML(samples.map { sample, mzml, raw, filtered -> tuple(sample, mzml) })
-    extract_MS1_matrix(samples.map { sample, mzml, raw, filtered -> tuple(sample, mzml) })
+    summarize_mzML(samples.map { sample, mzml, acquisition, raw, filtered ->
+        tuple(sample, acquisition)
+    })
+    extract_MS1_matrix(samples.map { sample, mzml, acquisition, raw, filtered ->
+        tuple(sample, acquisition)
+    })
     plot_MS1_landscape(extract_MS1_matrix.out.matrix)
-    summarize_search_idXML(samples.map { sample, mzml, raw, filtered -> tuple(sample, raw) })
-    summarize_filtered_idXML(samples.map { sample, mzml, raw, filtered -> tuple(sample, filtered) })
+    summarize_search_idXML(samples.map { sample, mzml, acquisition, raw, filtered -> tuple(sample, raw) })
+    summarize_filtered_idXML(samples.map { sample, mzml, acquisition, raw, filtered -> tuple(sample, filtered) })
     if (params.psm_features_csv) {
         featureRows = Channel.fromPath(params.psm_features_csv).splitCsv(header: true)
             .toList().map { [rows: it] }
-        featureSamples = samples.map { sample, mzml, raw, filtered -> sample }
+        featureSamples = samples.map { sample, mzml, acquisition, raw, filtered -> sample }
             .collect().map { [names: it] }
         featureEntries = featureRows.combine(featureSamples).flatMap { rowPayload, samplePayload ->
             def rows = rowPayload.rows
