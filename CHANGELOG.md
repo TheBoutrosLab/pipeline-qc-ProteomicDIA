@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-03
+
 ### Added
 
 - Read original Bruker `.d` acquisitions for DIA scan and MS1 QC through pyOpenMS 3.6 while retaining reconstructed mzML paths for search and DIA-NN sample mapping.
@@ -41,4 +43,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.0.0]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/releases/tag/v1.0.0
 [1.1.0]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.0.0...v1.1.0
 [1.1.1]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.1.0...v1.1.1
-[unreleased]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.1.1...HEAD
+[1.2.0]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.1.1...v1.2.0
+[unreleased]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.2.0...HEAD
