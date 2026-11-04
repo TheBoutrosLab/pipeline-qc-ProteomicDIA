@@ -82,7 +82,7 @@
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
       <li class="breadcrumb-item active">Pipeline steps</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/042ddec68f7dcaa5f212670e8d5bd1fc1fe7c289/README.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/9ab09858f58b70a5e9e4f763ee1e83c7348dfcad/README.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -102,12 +102,12 @@
 <tbody>
 <tr>
 <td><code>summarize_mzML</code></td>
-<td>One mzML per sample</td>
+<td>One mzML or Bruker <code>.d</code> acquisition per sample</td>
 <td>Acquisition duration, scan counts and rates, cycle timing, isolation windows, and TIC.</td>
 </tr>
 <tr>
 <td><code>extract_MS1_matrix</code></td>
-<td>One mzML per sample</td>
+<td>One mzML or Bruker <code>.d</code> acquisition per sample</td>
 <td>Bounded RT, m/z, and intensity matrix plus selection metadata.</td>
 </tr>
 <tr>
@@ -153,6 +153,7 @@
 </tbody>
 </table>
 <p>The MS1 matrix contains up to 120 strongest positive peaks from each of 350 evenly spaced MS1 scans within m/z 300–1200. The HTML embeds Plotly and works offline. The plot colors encode within-sample log-intensity percentiles: yellow (0–25), orange (25–50), red (50–75), purple (75–95), and blue (95–100). Colors therefore do not represent the same absolute intensity across samples. Continuous-value metric summaries include nonmissing and missing counts and the 5th, 25th, 50th, 75th, and 95th percentiles. PSM feature summaries use actual PIN columns or OpenMS <code>extra_features</code> metadata: <code>deltamass</code>, <code>dm</code>, <code>absdm</code>, RT delta/difference fields, and spectral angle, entropy, correlation, or cosine fields when present. The original feature name is retained in <code>metric_name</code>. <code>deltamass</code> is an m/z difference; when <code>CalcMass</code> is present, the pipeline also reports signed and absolute error in ppm. Other source feature units are left blank unless established by the source. No RT delta is inferred from a search idXML lacking a prediction feature; its status is <code>unavailable</code>. Target and decoy are summarized separately alongside all PSMs. Feature-derived mass error is labeled by <code>source_process</code> and remains distinct from any raw search metric.</p>
+<p>Bruker <code>.d</code> reading loads an OpenMS experiment in memory before MS1 scan selection. Allocate sufficient memory for full MS1 frames. Raw Bruker frame/window-spectrum counts can differ from counts in diaTracer's reconstructed mzML.</p>
               
             </div>
           </div><footer>

@@ -82,7 +82,7 @@
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
       <li class="breadcrumb-item active">Inputs</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/042ddec68f7dcaa5f212670e8d5bd1fc1fe7c289/README.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/9ab09858f58b70a5e9e4f763ee1e83c7348dfcad/README.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -91,13 +91,17 @@
             <div class="section" itemprop="articleBody">
               
                 <h2 id="inputs">Inputs</h2>
-<p>Three CSV manifests identify the same set of samples. Paths in these CSVs may be absolute or relative to the CSV directory. The current pipeline supports one mzML per sample; <code>fraction_id</code> is retained for future fraction support.</p>
+<p>Three CSV manifests identify the same set of samples. Paths in these CSVs may be absolute or relative to the CSV directory. The current pipeline supports one acquisition per sample; <code>fraction_id</code> is retained for future fraction support.</p>
 <p><strong>mzML CSV</strong> (<code>mzml_csv</code>):</p>
 <pre><code class="language-csv">sample_name,fraction_id,path
 sample_01,1,/data/sample_01.mzML
 sample_02,1,/data/sample_02.mzML
 </code></pre>
-<p>The two-column <code>sample_name,mzML</code> form is also accepted.</p>
+<p>For Bruker data, keep <code>path</code> pointed at the reconstructed mzML used for search and DIA-NN run-name matching, and add <code>acquisition_path</code> for the original <code>.d</code> directory:</p>
+<pre><code class="language-csv">sample_name,fraction_id,path,acquisition_path
+hela_01,1,/data/hela_01_reconstructed.mzML,/data/hela_01.d
+</code></pre>
+<p>Acquisition and MS1 QC use <code>acquisition_path</code> when present; otherwise they use <code>path</code>. The two-column <code>sample_name,mzML</code> form is also accepted for mzML-only runs. The <code>.d</code> directory must be accessible in the container.</p>
 <p><strong>Unfiltered search idXML CSV</strong> (<code>search_idxml_csv</code>):</p>
 <pre><code class="language-csv">sample_name,search_engine,idXML
 sample_01,MSFragger,/data/sample_01_MSFragger.idXML
@@ -129,7 +133,7 @@ sample_02,MSFragger,PSMFeatureExtractor,,/data/validation/sample_02/OpenMS-3.5.0
 </tr>
 <tr>
 <td><code>mzml_csv</code></td>
-<td>Per-sample mzML manifest.</td>
+<td>Per-sample reconstructed mzML path and optional original acquisition path.</td>
 </tr>
 <tr>
 <td><code>search_idxml_csv</code></td>
@@ -161,7 +165,7 @@ sample_02,MSFragger,PSMFeatureExtractor,,/data/validation/sample_02/OpenMS-3.5.0
 </tr>
 <tr>
 <td><code>diann_report</code></td>
-<td>DIA-NN main <code>report.tsv</code>. Its <code>Run</code> values must match a sample name, mzML filename, or mzML stem.</td>
+<td>DIA-NN main <code>report.tsv</code>. Its <code>Run</code> values must match a sample name, mzML filename or stem, or acquisition filename or stem.</td>
 </tr>
 <tr>
 <td><code>output_dir</code></td>
@@ -173,7 +177,7 @@ sample_02,MSFragger,PSMFeatureExtractor,,/data/validation/sample_02/OpenMS-3.5.0
 </tr>
 <tr>
 <td><code>pyopenms_version</code></td>
-<td>pyOpenMS image tag; default <code>3.5.0</code>.</td>
+<td>pyOpenMS image tag; default <code>3.6.0</code>.</td>
 </tr>
 <tr>
 <td><code>docker_image_plotly</code></td>
