@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-12
+
 ### Added
 
 - Support multiple DIA acquisitions per sample with arbitrary fraction labels, fraction-specific acquisition and MS1 outputs, and sample-level DIA-NN metrics from the final aggregated report.
@@ -49,4 +51,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.1.0]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.0.0...v1.1.0
 [1.1.1]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.1.0...v1.1.1
 [1.2.0]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.1.1...v1.2.0
-[unreleased]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.2.0...HEAD
+[1.2.1]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.2.0...v1.2.1
+[unreleased]: https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/compare/v1.2.1...HEAD
