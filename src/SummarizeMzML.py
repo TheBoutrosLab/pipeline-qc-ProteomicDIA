@@ -9,7 +9,8 @@ from QCMetrics import Metrics, finite
 
 def run(args):
     """Summarize acquisition timing, scan counts, windows, and signal."""
-    metrics = Metrics(args.dataset_id, args.sample_name, args.input, "acquisition")
+    metrics = Metrics(args.dataset_id, args.sample_name, args.input, "acquisition",
+                      fraction_id=args.fraction_id)
     times, ms1_times, ms2_times, tic, windows = [], [], [], [], []
     window_lowers, window_uppers, window_widths, window_times = [], [], [], []
     ms2_per_cycle = []
@@ -80,5 +81,6 @@ if __name__ == "__main__":
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--sample-name", required=True)
+    parser.add_argument("--fraction-id", required=True)
     parser.add_argument("--dataset-id", required=True)
     run(parser.parse_args())

@@ -18,14 +18,16 @@ The `standard` and `docker` profiles use Docker; `apptainer` uses Apptainer. The
 
 ## Inputs
 
-Three CSV manifests identify the same set of samples. Paths in these CSVs may be absolute or relative to the CSV directory. The current pipeline supports one acquisition per sample; `fraction_id` is retained for future fraction support.
+Three CSV manifests identify the same set of samples. The mzML manifest has one row per acquisition, keyed by `(sample_name, fraction_id)`; search and filtered idXML manifests have one row per sample. Fraction IDs are nonempty strings; numeric labels such as `1` and `2` are typical. Paths may be absolute or relative to the CSV directory.
 
 **mzML CSV** (`mzml_csv`):
 
 ```csv
 sample_name,fraction_id,path
-sample_01,1,/data/sample_01.mzML
-sample_02,1,/data/sample_02.mzML
+sample_01,1,/data/sample_01_fraction_1.mzML
+sample_01,2,/data/sample_01_fraction_2.mzML
+sample_02,1,/data/sample_02_fraction_1.mzML
+sample_02,2,/data/sample_02_fraction_2.mzML
 ```
 
 For Bruker data, keep `path` pointed at the reconstructed mzML used for search and DIA-NN run-name matching, and add `acquisition_path` for the original `.d` directory:
@@ -35,7 +37,7 @@ sample_name,fraction_id,path,acquisition_path
 hela_01,1,/data/hela_01_reconstructed.mzML,/data/hela_01.d
 ```
 
-Acquisition and MS1 QC use `acquisition_path` when present; otherwise they use `path`. The two-column `sample_name,mzML` form is also accepted for mzML-only runs. The `.d` directory must be accessible in the container.
+Acquisition and MS1 QC use `acquisition_path` when present; otherwise they use `path`. The `.d` directory must be accessible in the container.
 
 **Unfiltered search idXML CSV** (`search_idxml_csv`):
 
@@ -63,7 +65,7 @@ sample_02,MSFragger,PSMFeatureExtractor,,/data/validation/sample_02/OpenMS-3.5.0
 
 `route` is `MSBooster` or `PSMFeatureExtractor`. The manifest is optional; omit the parameter or use a header-only CSV when the validation run did not publish feature files. List one row per published file. The `fraction_id` is required to distinguish fraction-level MSBooster PIN files and may be blank for a sample-level PSMFeatureExtractor idXML. Feature samples must appear in the mzML manifest. Paths may be absolute or relative to the feature CSV.
 
-The search CSV can be the metapipeline's `validation.csv`. Create the filtered CSV from the final validation outputs; the metapipeline does not currently publish it. Sample names must be unique and identical across all three CSVs.
+The search CSV can be the metapipeline's `validation.csv`. Create the filtered CSV from the final validation outputs; the metapipeline does not currently publish it. Sample names must be unique in the search and filtered CSVs and cover exactly the samples in the mzML CSV. Duplicate `(sample_name, fraction_id)` pairs are rejected.
 
 | Parameter | Description |
 | --- | --- |
@@ -76,7 +78,7 @@ The search CSV can be the metapipeline's `validation.csv`. Create the filtered C
 | `protein_groups` | Cohort ProteinProphet or Epifany idXML; cohort Fido groups JSON; or a ProtLoom CSV described below. |
 | `library_tsv` | Published cohort EasyPQP library TSV. |
 | `export_summary_tsv` | Validation EasyPQP export summary TSV with `metric,count` columns. |
-| `diann_report` | DIA-NN main `report.tsv`. Its `Run` values must match a sample name, mzML filename or stem, or acquisition filename or stem. |
+| `diann_report` | Final aggregated DIA-NN report TSV. Fractionated reports use sample names in `Run`, so quantification metrics are sample-level. |
 | `output_dir` | Root directory for QC results. |
 | `work_dir` | Optional Nextflow work directory. |
 | `pyopenms_version` | pyOpenMS image tag; default `3.6.0`. |
@@ -95,15 +97,15 @@ sample_02,/data/validation/sample_02/ProtLoom-0.2.3/output/sample_02_groups.tsv
 
 | Process | Input | Result |
 | --- | --- | --- |
-| `summarize_mzML` | One mzML or Bruker `.d` acquisition per sample | Acquisition duration, scan counts and rates, cycle timing, isolation windows, and TIC. |
-| `extract_MS1_matrix` | One mzML or Bruker `.d` acquisition per sample | Bounded RT, m/z, and intensity matrix plus selection metadata. |
+| `summarize_mzML` | One mzML or Bruker `.d` acquisition per sample/fraction | Acquisition duration, scan counts and rates, cycle timing, isolation windows, and TIC. |
+| `extract_MS1_matrix` | One mzML or Bruker `.d` acquisition per sample/fraction | Bounded RT, m/z, and intensity matrix plus selection metadata. |
 | `plot_MS1_landscape` | MS1 matrix and metadata | Offline interactive 3D stick spectrum in HTML. |
 | `summarize_search_idXML` | One unfiltered search idXML per sample | Candidate and best-hit counts, search-score percentiles, and charge counts. |
 | `summarize_filtered_idXML` | One final filtered idXML per sample | Accepted PSM and distinct peptide counts and score percentiles. |
 | `summarize_PSMFeatures` | One published MSBooster PIN or PSMFeatureExtractor idXML | Target/decoy feature counts and distributions, with mass-error and RT-deviation summaries when available. |
 | `summarize_ProteinGroups_*` | One selected inference route | Cohort protein-group counts, sizes, and probabilities when available. |
 | `summarize_EasyPQP_library` | Library and export summary | Cohort transition, precursor, peptide, and export counts. |
-| `summarize_DIANN_report` | DIA-NN main report | Per-sample quantified counts, intensity percentiles, and precursor missingness. |
+| `summarize_DIANN_report` | Final aggregated DIA-NN report | Per-sample quantified counts, intensity percentiles, and precursor missingness. |
 | `collect_QCMetrics` | All stage metric TSVs | Combined QC metric table. |
 
 The MS1 matrix contains up to 120 strongest positive peaks from each of 350 evenly spaced MS1 scans within m/z 300–1200. The HTML embeds Plotly and works offline. The plot colors encode within-sample log-intensity percentiles: yellow (0–25), orange (25–50), red (50–75), purple (75–95), and blue (95–100). Colors therefore do not represent the same absolute intensity across samples. Continuous-value metric summaries include nonmissing and missing counts and the 5th, 25th, 50th, 75th, and 95th percentiles. PSM feature summaries use actual PIN columns or OpenMS `extra_features` metadata: `deltamass`, `dm`, `absdm`, RT delta/difference fields, and spectral angle, entropy, correlation, or cosine fields when present. The original feature name is retained in `metric_name`. `deltamass` is an m/z difference; when `CalcMass` is present, the pipeline also reports signed and absolute error in ppm. Other source feature units are left blank unless established by the source. No RT delta is inferred from a search idXML lacking a prediction feature; its status is `unavailable`. Target and decoy are summarized separately alongside all PSMs. Feature-derived mass error is labeled by `source_process` and remains distinct from any raw search metric.
@@ -112,17 +114,17 @@ Bruker `.d` reading loads an OpenMS experiment in memory before MS1 scan selecti
 
 ## Outputs
 
-Results are published under `<output_dir>/qc-ProteomicDIA-1.0.0/<dataset_id>/`:
+Results are published under `<output_dir>/qc-ProteomicDIA-<version>/<dataset_id>/`:
 
 | Output | Description |
 | --- | --- |
 | `output/<dataset_id>_QC_metrics.tsv` | Combined long-form QC table. |
-| `output/mzML/<sample_name>_mzML_metrics.tsv` | Per-sample mzML metrics. |
-| `output/mzML/<sample_name>_MS1_matrix.tsv` and `.json` | Selected MS1 peaks and selection metadata. |
-| `output/mzML/<sample_name>_MS1_landscape.html` | Interactive MS1 figure. |
+| `output/mzML/<sample_name>/<fraction_id>/<sample_name>_<fraction_id>_mzML_metrics.tsv` | Per-fraction acquisition metrics. |
+| `output/mzML/<sample_name>/<fraction_id>/<sample_name>_<fraction_id>_MS1_matrix.tsv` and `.json` | Selected MS1 peaks and selection metadata. |
+| `output/mzML/<sample_name>/<fraction_id>/<sample_name>_<fraction_id>_MS1_landscape.html` | Interactive MS1 figure. |
 | `output/search_idXML/<sample_name>_search_idXML_metrics.tsv` | Unfiltered search metrics. |
 | `output/filtered_idXML/<sample_name>_filtered_idXML_metrics.tsv` | Final filtered identification metrics. |
-| `output/PSMFeatures/<sample_name>_<search_engine>_<route>_<fraction_id-or-all>_PSMFeatures_metrics.tsv` | Optional feature metrics for one published file. |
+| `output/PSMFeatures/<sample_name>/<fraction_id-or-all>/<sample_name>_<search_engine>_<route>_<fraction_id-or-all>_PSMFeatures_metrics.tsv` | Optional feature metrics for one published file. |
 | `output/ProteinGroups/<dataset_id>_ProteinGroups_metrics.tsv` | Cohort inference metrics. |
 | `output/EasyPQP/<dataset_id>_EasyPQP_metrics.tsv` | Library and export metrics. |
 | `output/DIA-NN/<dataset_id>_DIANN_metrics.tsv` | DIA-NN quantitation metrics. |
@@ -132,13 +134,13 @@ Each metric row records `dataset_id`, `layer`, `source_process`, `sample_name` (
 
 ## Testing
 
-The UCLA nf-test suite has integration cases for ProteinProphet, Fido, Epifany, and ProtLoom. All four use the same two *E. coli* mzML files and their route-specific metapipeline outputs. Set `TEST_DATA_DIR` in a local `.env` file using [`.env-template`](.env-template), then run a case inside a Slurm job:
+The UCLA nf-test suite has integration cases for ProteinProphet (multi-fraction), Fido, Epifany, ProtLoom, and HeLa dia-PASEF. The ProteinProphet case uses six fractionated *E. coli* mzML files; Fido, Epifany, and ProtLoom use two unfractionated files and their route-specific outputs. Set `TEST_DATA_DIR` in a local `.env` file using [`.env-template`](.env-template), then run a case inside a Slurm job:
 
 ```bash
 bash test/run-nftest.sh test-integration-ProteinProphet
 ```
 
-See [test/README.md](test/README.md) for the other case names and test-data layout. These tests require the lab's external metapipeline outputs; they are not self-contained fixtures. `python -m unittest discover -s test -p "test_psm_features.py"` checks both published feature formats with synthetic inputs.
+See [test/README.md](test/README.md) for the other case names and test-data layout. These tests require the lab's external metapipeline outputs; they are not self-contained fixtures. The ProteinProphet case uses the final aggregated DIA-NN report, so its quantification metrics are sample-level.
 
 ## License
 

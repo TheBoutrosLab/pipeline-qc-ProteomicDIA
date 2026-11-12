@@ -7,7 +7,7 @@ mzml_csv:
   type: 'Path'
   mode: 'r'
   required: true
-  help: 'CSV with sample_name,fraction_id,path and optional acquisition_path (.mzML or Bruker .d); one row per sample'
+  help: 'CSV with sample_name,fraction_id,path and optional acquisition_path (.mzML or Bruker .d); one row per sample/fraction pair'
 search_idxml_csv:
   type: 'Path'
   mode: 'r'
@@ -47,7 +47,7 @@ diann_report:
   type: 'Path'
   mode: 'r'
   required: true
-  help: 'DIA-NN main report TSV'
+  help: 'Final aggregated DIA-NN report TSV'
 output_dir:
   type: 'Path'
   mode: 'w'

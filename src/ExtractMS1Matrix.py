@@ -84,6 +84,7 @@ def write_outputs(args, rows, total_scans, selected_scans):
             writer.writerow([index, f'{rt:.6f}', f'{mz:.6f}', f'{intensity:.9g}'])
     metadata = {
         'sample_name': args.sample_name,
+        'fraction_id': args.fraction_id,
         'total_ms1_scans': total_scans,
         'selected_ms1_scans': selected_scans,
         'selected_peaks': len(rows),
@@ -104,6 +105,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', required=True)
     parser.add_argument('--sample-name', required=True)
+    parser.add_argument('--fraction-id', required=True)
     parser.add_argument('--matrix', required=True)
     parser.add_argument('--metadata', required=True)
     parser.add_argument('--mz-min', type=float, default=300.0)
