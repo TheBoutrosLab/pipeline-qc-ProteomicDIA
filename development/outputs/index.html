@@ -82,7 +82,7 @@
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
       <li class="breadcrumb-item active">Outputs</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/9e35de2e628d1c9a8d559614ad3ec8bef9d38655/README.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/54b8362d576265011a5698cc1bb191d29ee34246/README.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -91,7 +91,7 @@
             <div class="section" itemprop="articleBody">
               
                 <h2 id="outputs">Outputs</h2>
-<p>Results are published under <code>&lt;output_dir&gt;/qc-ProteomicDIA-1.0.0/&lt;dataset_id&gt;/</code>:</p>
+<p>Results are published under <code>&lt;output_dir&gt;/qc-ProteomicDIA-&lt;version&gt;/&lt;dataset_id&gt;/</code>:</p>
 <table>
 <thead>
 <tr>
@@ -105,15 +105,15 @@
 <td>Combined long-form QC table.</td>
 </tr>
 <tr>
-<td><code>output/mzML/&lt;sample_name&gt;_mzML_metrics.tsv</code></td>
-<td>Per-sample mzML metrics.</td>
+<td><code>output/mzML/&lt;sample_name&gt;/&lt;fraction_id&gt;/&lt;sample_name&gt;_&lt;fraction_id&gt;_mzML_metrics.tsv</code></td>
+<td>Per-fraction acquisition metrics.</td>
 </tr>
 <tr>
-<td><code>output/mzML/&lt;sample_name&gt;_MS1_matrix.tsv</code> and <code>.json</code></td>
+<td><code>output/mzML/&lt;sample_name&gt;/&lt;fraction_id&gt;/&lt;sample_name&gt;_&lt;fraction_id&gt;_MS1_matrix.tsv</code> and <code>.json</code></td>
 <td>Selected MS1 peaks and selection metadata.</td>
 </tr>
 <tr>
-<td><code>output/mzML/&lt;sample_name&gt;_MS1_landscape.html</code></td>
+<td><code>output/mzML/&lt;sample_name&gt;/&lt;fraction_id&gt;/&lt;sample_name&gt;_&lt;fraction_id&gt;_MS1_landscape.html</code></td>
 <td>Interactive MS1 figure.</td>
 </tr>
 <tr>
@@ -125,7 +125,7 @@
 <td>Final filtered identification metrics.</td>
 </tr>
 <tr>
-<td><code>output/PSMFeatures/&lt;sample_name&gt;_&lt;search_engine&gt;_&lt;route&gt;_&lt;fraction_id-or-all&gt;_PSMFeatures_metrics.tsv</code></td>
+<td><code>output/PSMFeatures/&lt;sample_name&gt;/&lt;fraction_id-or-all&gt;/&lt;sample_name&gt;_&lt;search_engine&gt;_&lt;route&gt;_&lt;fraction_id-or-all&gt;_PSMFeatures_metrics.tsv</code></td>
 <td>Optional feature metrics for one published file.</td>
 </tr>
 <tr>
