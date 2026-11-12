@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Inputs - pipeline-qc-ProteomicDIA</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../css/version-select.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Inputs";
+        var mkdocs_page_input_path = "inputs.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> pipeline-qc-ProteomicDIA
+        </a>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../how-to-run/">How to run</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Inputs</a>
+    <ul class="current">
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../pipeline-steps/">Pipeline steps</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../outputs/">Outputs</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../testing/">Testing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">pipeline-qc-ProteomicDIA</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Inputs</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/v1.2.1/README.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="inputs">Inputs</h2>
+<p>Three CSV manifests identify the same set of samples. The mzML manifest has one row per acquisition, keyed by <code>(sample_name, fraction_id)</code>; search and filtered idXML manifests have one row per sample. Fraction IDs are nonempty strings; numeric labels such as <code>1</code> and <code>2</code> are typical. Paths may be absolute or relative to the CSV directory.</p>
+<p><strong>mzML CSV</strong> (<code>mzml_csv</code>):</p>
+<pre><code class="language-csv">sample_name,fraction_id,path
+sample_01,1,/data/sample_01_fraction_1.mzML
+sample_01,2,/data/sample_01_fraction_2.mzML
+sample_02,1,/data/sample_02_fraction_1.mzML
+sample_02,2,/data/sample_02_fraction_2.mzML
+</code></pre>
+<p>For Bruker data, keep <code>path</code> pointed at the reconstructed mzML used for search and DIA-NN run-name matching, and add <code>acquisition_path</code> for the original <code>.d</code> directory:</p>
+<pre><code class="language-csv">sample_name,fraction_id,path,acquisition_path
+hela_01,1,/data/hela_01_reconstructed.mzML,/data/hela_01.d
+</code></pre>
+<p>Acquisition and MS1 QC use <code>acquisition_path</code> when present; otherwise they use <code>path</code>. The <code>.d</code> directory must be accessible in the container.</p>
+<p><strong>Unfiltered search idXML CSV</strong> (<code>search_idxml_csv</code>):</p>
+<pre><code class="language-csv">sample_name,search_engine,idXML
+sample_01,MSFragger,/data/sample_01_MSFragger.idXML
+sample_02,MSFragger,/data/sample_02_MSFragger.idXML
+</code></pre>
+<p><strong>Final filtered idXML CSV</strong> (<code>filtered_idxml_csv</code>):</p>
+<pre><code class="language-csv">sample_name,idXML
+sample_01,/data/sample_01_MSFragger_filter.idXML
+sample_02,/data/sample_02_MSFragger_filter.idXML
+</code></pre>
+<p><strong>Optional PSM feature CSV</strong> (<code>psm_features_csv</code>):</p>
+<pre><code class="language-csv">sample_name,search_engine,route,fraction_id,path
+sample_01,MSFragger,MSBooster,1,/data/validation/sample_01/MSBooster/output/engine_MSFragger/run_01-fraction_1_edited.pin
+sample_02,MSFragger,PSMFeatureExtractor,,/data/validation/sample_02/OpenMS-3.5.0/output/sample_02_MSFragger_featureExtracted.idXML
+</code></pre>
+<p><code>route</code> is <code>MSBooster</code> or <code>PSMFeatureExtractor</code>. The manifest is optional; omit the parameter or use a header-only CSV when the validation run did not publish feature files. List one row per published file. The <code>fraction_id</code> is required to distinguish fraction-level MSBooster PIN files and may be blank for a sample-level PSMFeatureExtractor idXML. Feature samples must appear in the mzML manifest. Paths may be absolute or relative to the feature CSV.</p>
+<p>The search CSV can be the metapipeline's <code>validation.csv</code>. Create the filtered CSV from the final validation outputs; the metapipeline does not currently publish it. Sample names must be unique in the search and filtered CSVs and cover exactly the samples in the mzML CSV. Duplicate <code>(sample_name, fraction_id)</code> pairs are rejected.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dataset_id</code></td>
+<td>Cohort identifier used in the output path and metric filenames.</td>
+</tr>
+<tr>
+<td><code>mzml_csv</code></td>
+<td>Per-sample reconstructed mzML path and optional original acquisition path.</td>
+</tr>
+<tr>
+<td><code>search_idxml_csv</code></td>
+<td>Unfiltered MSFragger search idXML manifest.</td>
+</tr>
+<tr>
+<td><code>filtered_idxml_csv</code></td>
+<td>Final filtered validation idXML manifest.</td>
+</tr>
+<tr>
+<td><code>psm_features_csv</code></td>
+<td>Optional published MSBooster PIN or PSMFeatureExtractor idXML manifest.</td>
+</tr>
+<tr>
+<td><code>inference_route</code></td>
+<td><code>ProteinProphet</code>, <code>Fido</code>, <code>Epifany</code>, or <code>ProtLoom</code>.</td>
+</tr>
+<tr>
+<td><code>protein_groups</code></td>
+<td>Cohort ProteinProphet or Epifany idXML; cohort Fido groups JSON; or a ProtLoom CSV described below.</td>
+</tr>
+<tr>
+<td><code>library_tsv</code></td>
+<td>Published cohort EasyPQP library TSV.</td>
+</tr>
+<tr>
+<td><code>export_summary_tsv</code></td>
+<td>Validation EasyPQP export summary TSV with <code>metric,count</code> columns.</td>
+</tr>
+<tr>
+<td><code>diann_report</code></td>
+<td>Final aggregated DIA-NN report TSV. Fractionated reports use sample names in <code>Run</code>, so quantification metrics are sample-level.</td>
+</tr>
+<tr>
+<td><code>output_dir</code></td>
+<td>Root directory for QC results.</td>
+</tr>
+<tr>
+<td><code>work_dir</code></td>
+<td>Optional Nextflow work directory.</td>
+</tr>
+<tr>
+<td><code>pyopenms_version</code></td>
+<td>pyOpenMS image tag; default <code>3.6.0</code>.</td>
+</tr>
+<tr>
+<td><code>docker_image_plotly</code></td>
+<td>Plotly image; default <code>multiqc/multiqc:v1.35</code>.</td>
+</tr>
+<tr>
+<td><code>base_resource_update</code></td>
+<td>Optional process CPU and memory overrides.</td>
+</tr>
+</tbody>
+</table>
+<p>ProteinProphet and Epifany use their cohort idXML outputs. Fido uses its cohort <code>*-Fido-groups.json</code>. For ProtLoom, set <code>protein_groups</code> to a CSV that points to the per-sample <code>*_groups.tsv</code> files produced by the cohort inference run:</p>
+<pre><code class="language-csv">sample_name,groups_tsv
+sample_01,/data/validation/sample_01/ProtLoom-0.2.3/output/sample_01_groups.tsv
+sample_02,/data/validation/sample_02/ProtLoom-0.2.3/output/sample_02_groups.tsv
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../how-to-run/" class="btn btn-neutral float-left" title="How to run"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../pipeline-steps/" class="btn btn-neutral float-right" title="Pipeline steps">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/tree/v1.2.1" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../how-to-run/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../pipeline-steps/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../js/version-select.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
