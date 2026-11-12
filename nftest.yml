@@ -12,7 +12,7 @@ cases:
     nf_config: test/test-integration-Fido/test.config
     verbose: true
   - name: test-integration-ProteinProphet
-    message: Summarize two DIA runs and cohort ProteinProphet groups
+    message: Summarize six fractionated DIA acquisitions and cohort ProteinProphet groups
     nf_script: main.nf
     nf_config: test/test-integration-ProteinProphet/test.config
     verbose: true

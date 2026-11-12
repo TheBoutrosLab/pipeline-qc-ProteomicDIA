@@ -5,6 +5,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support multiple DIA acquisitions per sample with arbitrary fraction labels, fraction-specific acquisition and MS1 outputs, and sample-level DIA-NN metrics from the final aggregated report.
+- Update the ProteinProphet integration case to use published multi-fraction E. coli metapipeline outputs.
+
 ## [1.2.0] - 2026-11-03
 
 ### Added

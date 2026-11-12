@@ -1,13 +1,13 @@
 # DIA QC integration tests
 
-The UCLA nf-test suite is defined in `nftest.yml`. The ProteinProphet,
-Fido, Epifany, and ProtLoom cases use the same two E. coli mzML files. Each case reads
+The UCLA nf-test suite is defined in `nftest.yml`. The ProteinProphet case uses six fractionated E. coli mzML files.
+Fido, Epifany, and ProtLoom use two unfractionated E. coli mzML files. Each case reads
 search idXML, filtered idXML, protein groups, the EasyPQP library and
 export summary, and the DIA-NN report from its own metapipeline run directory
 under `TEST_DATA_DIR`. Their case-local CSVs expand `$TEST_DATA_DIR` before
 Nextflow reads them. ProtLoom uses a `groups.csv` manifest listing the per-sample
 `*_groups.tsv` files from its cohort inference run. The mzML manifests use `sample_name,fraction_id,path`;
-only one row per sample is supported at present.
+the ProteinProphet case has three rows per sample.
 
 Load the lab's `nftest` and Nextflow environment, then run inside a Slurm job:
 
@@ -29,3 +29,8 @@ mapping. Its manifests reference the published HeLa search, validation, and libr
 outputs under `$TEST_DATA_DIR/hela_diapasef/output`, including the published DIA-NN
 report. The report's `Run` value is the original Bruker `.d` stem, which the QC reader
 maps to `hela_50ng_5_6min` through `acquisition_path`.
+
+The `test-integration-ProteinProphet` case uses the verified
+E. coli DIA 1.4.0 output, with three acquisitions per sample (`F1`–`F3`).
+It uses the published combined DIA-NN report, which yields sample-level
+quantification metrics.

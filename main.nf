@@ -34,59 +34,70 @@ workflow {
     mzmlRows = Channel.fromPath(params.mzml_csv).splitCsv(header: true).toList().map { [rows: it] }
     searchRows = Channel.fromPath(params.search_idxml_csv).splitCsv(header: true).toList().map { [rows: it] }
     filteredRows = Channel.fromPath(params.filtered_idxml_csv).splitCsv(header: true).toList().map { [rows: it] }
-    samples = mzmlRows.combine(searchRows).combine(filteredRows).flatMap { mzPayload, rawPayload, finalPayload ->
+    inputs = mzmlRows.combine(searchRows).combine(filteredRows).map { mzPayload, rawPayload, finalPayload ->
         def mzRows = mzPayload.rows
         def rawRows = rawPayload.rows
         def finalRows = finalPayload.rows
         if (!mzRows || !rawRows || !finalRows) error 'All three sample manifests must contain rows'
-        def asMap = { rows, pathColumn, source ->
+        if (!(mzRows[0].keySet().containsAll(['sample_name', 'fraction_id', 'path'])))
+            error 'mzML manifest needs sample_name,fraction_id,path columns'
+        def safe = { value -> value ==~ /[A-Za-z0-9][A-Za-z0-9._-]*/ }
+        def mz = [:]
+        mzRows.each { row ->
+            def sample = row.sample_name?.trim()
+            def fraction = row.fraction_id?.trim()
+            if (!fraction)
+                error "Missing fraction_id in ${params.mzml_csv}: ${row}"
+            def key = [sample, fraction]
+            if (!safe(sample) || !safe(fraction) || mz.containsKey(key))
+                error "Invalid or duplicate sample_name/fraction_id in ${params.mzml_csv}: ${key}"
+            def path = row.path?.trim()
+            def reconstructed = resolveInput(file(params.mzml_csv), path)
+            def acquisition = resolveAcquisition(file(params.mzml_csv),
+                row.acquisition_path?.trim() ?: path)
+            mz[key] = [reconstructed, acquisition]
+        }
+        def asMap = { rows, source ->
             def values = [:]
             rows.each { row ->
                 def sample = row.sample_name?.trim()
-                if (!(sample ==~ /[A-Za-z0-9][A-Za-z0-9._-]*/) || values.containsKey(sample)) {
+                if (!safe(sample) || values.containsKey(sample))
                     error "Invalid or duplicate sample_name in ${source}: ${sample}"
-                }
-                values[sample] = resolveInput(file(source), row[pathColumn]?.trim())
+                values[sample] = resolveInput(file(source), row.idXML?.trim())
             }
             values
         }
-        def mzColumn = mzRows[0].containsKey('path') ? 'path' : 'mzML'
-        def mz = asMap(mzRows, mzColumn, params.mzml_csv)
-        def acquisition = [:]
-        mzRows.each { row ->
-            def sample = row.sample_name?.trim()
-            def path = row.acquisition_path?.trim() ?: row[mzColumn]?.trim()
-            acquisition[sample] = resolveAcquisition(file(params.mzml_csv), path)
-        }
-        def raw = asMap(rawRows, 'idXML', params.search_idxml_csv)
-        def filtered = asMap(finalRows, 'idXML', params.filtered_idxml_csv)
-        if (mz.keySet() != raw.keySet() || mz.keySet() != filtered.keySet())
+        def raw = asMap(rawRows, params.search_idxml_csv)
+        def filtered = asMap(finalRows, params.filtered_idxml_csv)
+        def names = mz.keySet().collect { it[0] } as Set
+        if (names != raw.keySet() || names != filtered.keySet())
             error 'mzML, search idXML, and filtered idXML manifests must contain the same sample names'
         rawRows.each { row ->
             if (row.search_engine && row.search_engine != 'MSFragger')
                 error "DIA QC expects MSFragger search idXML: ${row.search_engine}"
         }
-        mz.keySet().sort().collect { sample ->
-            tuple(sample, mz[sample], acquisition[sample], raw[sample], filtered[sample])
-        }
+        [acquisitions: mz.keySet().sort().collect { key ->
+            tuple(key[0], key[1], mz[key][1])
+        }, samples: names.sort().collect { sample ->
+            tuple(sample, raw[sample], filtered[sample])
+        }, pairs: mz.keySet()]
     }
-    summarize_mzML(samples.map { sample, mzml, acquisition, raw, filtered ->
-        tuple(sample, acquisition)
-    })
-    extract_MS1_matrix(samples.map { sample, mzml, acquisition, raw, filtered ->
-        tuple(sample, acquisition)
-    })
+    acquisitions = inputs.flatMap { it.acquisitions }
+    sampleIds = inputs.flatMap { it.samples }
+    summarize_mzML(acquisitions)
+    extract_MS1_matrix(acquisitions)
     plot_MS1_landscape(extract_MS1_matrix.out.matrix)
-    summarize_search_idXML(samples.map { sample, mzml, acquisition, raw, filtered -> tuple(sample, raw) })
-    summarize_filtered_idXML(samples.map { sample, mzml, acquisition, raw, filtered -> tuple(sample, filtered) })
+    summarize_search_idXML(sampleIds.map { sample, raw, filtered -> tuple(sample, raw) })
+    summarize_filtered_idXML(sampleIds.map { sample, raw, filtered -> tuple(sample, filtered) })
     if (params.psm_features_csv) {
         featureRows = Channel.fromPath(params.psm_features_csv).splitCsv(header: true)
             .toList().map { [rows: it] }
-        featureSamples = samples.map { sample, mzml, acquisition, raw, filtered -> sample }
-            .collect().map { [names: it] }
+        featureSamples = inputs.map { [names: it.samples.collect { sample, raw, filtered -> sample },
+                                          pairs: it.pairs] }
         featureEntries = featureRows.combine(featureSamples).flatMap { rowPayload, samplePayload ->
             def rows = rowPayload.rows
             def sampleNames = samplePayload.names
+            def pairs = samplePayload.pairs
             def safe = { value -> value ==~ /[A-Za-z0-9][A-Za-z0-9._-]*/ }
             def seen = [] as Set
             rows.collect { row ->
@@ -96,8 +107,9 @@ workflow {
                 def fraction = row.fraction_id?.trim() ?: ''
                 if (!safe(sample) || !(sample in sampleNames) || engine != 'MSFragger' ||
                     !(route in ['MSBooster', 'PSMFeatureExtractor']) ||
-                    (route == 'MSBooster' && !fraction) ||
-                    (fraction && !safe(fraction)) || !seen.add([sample, engine, route, fraction]))
+                    (route == 'MSBooster' && (!fraction || !pairs.contains([sample, fraction]))) ||
+                    (fraction && (!safe(fraction) || !pairs.contains([sample, fraction]))) ||
+                    !seen.add([sample, engine, route, fraction]))
                     error "Invalid or duplicate PSM feature manifest row: ${row}"
                 def input = resolveInput(file(params.psm_features_csv), row.path?.trim())
                 if ((route == 'MSBooster' && !input.name.endsWith('.pin')) ||

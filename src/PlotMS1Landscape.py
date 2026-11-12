@@ -77,7 +77,8 @@ def run(args):
             rows.append((rt, mz, intensity))
     if len(rows) != metadata['selected_peaks']:
         raise ValueError('MS1 peak matrix row count does not match metadata')
-    figure = make_figure(rows, metadata['sample_name'])
+    figure = make_figure(rows,
+                         f"{metadata['sample_name']} / {metadata['fraction_id']}")
     figure.write_html(args.output, include_plotlyjs=True, full_html=True)
 
 
