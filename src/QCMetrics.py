@@ -2,9 +2,6 @@
 
 import csv
 import math
-from collections import Counter
-
-import pyopenms as oms
 
 
 FIELDS = ["dataset_id", "layer", "source_process", "sample_name", "search_engine",
@@ -76,6 +73,15 @@ class Metrics:
             else:
                 self.unavailable(f"{name}_p{q:02d}", unit, group)
 
+    def unavailable_distribution(self, name, unit="", group="all"):
+        """Mark all seven rows unavailable when a required source field is absent."""
+        for suffix in ("count", "missing_count", "p05", "p25", "p50", "p75", "p95"):
+            self.unavailable(
+                name=f"{name}_{suffix}",
+                unit="" if suffix.endswith("count") else unit,
+                group=group,
+            )
+
     def write(self, path):
         """Write metric rows as a tab-separated table."""
         with open(path, "w", newline="", encoding="utf-8") as handle:
@@ -92,51 +98,3 @@ def rows(path, required=()):
         if missing:
             raise ValueError(f"{path} is missing columns: {', '.join(sorted(missing))}")
         yield from reader
-
-
-def score_summary(metrics, path, name="search_score"):
-    """Summarize the primary score of each best-scoring peptide hit."""
-    protein_ids = []
-    peptide_ids = oms.PeptideIdentificationList()
-    oms.IdXMLFile().load(str(path), protein_ids, peptide_ids)
-    groups = {"all": [], "target": [], "decoy": [], "unknown": []}
-    candidates = 0
-    peptides = set()
-    charges = Counter()
-    score_types = set()
-    score_directions = set()
-    for identification in peptide_ids:
-        hits = identification.getHits()
-        candidates += len(hits)
-        if not hits:
-            continue
-        higher = identification.isHigherScoreBetter()
-        score_types.add(as_text(identification.getScoreType()))
-        score_directions.add(higher)
-        scored = [(finite(hit.getScore()), hit) for hit in hits]
-        valid = [(score, hit) for score, hit in scored if score is not None]
-        if not valid:
-            continue
-        score, rank_one = (max(valid, key=lambda pair: pair[0]) if higher
-                           else min(valid, key=lambda pair: pair[0]))
-        groups["all"].append(score)
-        label = (as_text(rank_one.getMetaValue("target_decoy")).lower()
-                 if rank_one.metaValueExists("target_decoy") else "unknown")
-        if label not in ("target", "decoy"):
-            label = "unknown"
-        groups[label].append(score)
-        peptides.add(as_text(rank_one.getSequence().toString()))
-        charges[rank_one.getCharge()] += 1
-    metrics.add("peptide_identification_count", len(peptide_ids))
-    metrics.add("candidate_psm_count", candidates)
-    metrics.add("rank1_hit_count", len(groups["all"]))
-    metrics.add("distinct_rank1_peptide_count", len(peptides - {""}))
-    if len(score_types) == 1:
-        metrics.add(name + "_type", next(iter(score_types)), unit="")
-    if len(score_directions) == 1:
-        metrics.add(name + "_higher_is_better", int(next(iter(score_directions))), unit="boolean")
-    metrics.add("target_decoy_label_missing_count", len(groups["unknown"]))
-    for label, values in groups.items():
-        metrics.distribution(name, values, group=label)
-    for charge, count in sorted(charges.items()):
-        metrics.add("rank1_charge_count", count, group=charge)

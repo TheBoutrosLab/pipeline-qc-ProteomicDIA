@@ -12,6 +12,7 @@ import pyopenms as oms
 
 from AcquisitionReader import is_bruker, load_acquisition
 
+
 def evenly_spaced_indices(count, limit):
     """Choose MS1 scans across the complete run, including both endpoints."""
     if count <= limit:
@@ -75,29 +76,72 @@ def extract_peaks(spectra, mz_min, mz_max, peaks_per_scan):
     return rows, selected_scan_count
 
 
-def write_outputs(args, rows, total_scans, selected_scans):
-    """Write the selected peak matrix and its selection metadata."""
-    with open(args.matrix, 'w', newline='', encoding='utf-8') as handle:
-        writer = csv.writer(handle, delimiter='\t')
-        writer.writerow(['scan_index', 'rt_sec', 'mz', 'intensity'])
-        for index, rt, mz, intensity in rows:
-            writer.writerow([index, f'{rt:.6f}', f'{mz:.6f}', f'{intensity:.9g}'])
-    metadata = {
-        'sample_name': args.sample_name,
-        'fraction_id': args.fraction_id,
-        'total_ms1_scans': total_scans,
-        'selected_ms1_scans': selected_scans,
-        'selected_peaks': len(rows),
-        'rt_min_sec': min(row[1] for row in rows),
-        'rt_max_sec': max(row[1] for row in rows),
-        'mz_min': args.mz_min, 'mz_max': args.mz_max,
-        'max_scans': args.max_scans,
-        'peaks_per_scan': args.peaks_per_scan,
-        'selection': ('Evenly spaced MS1 scans across the run; strongest positive peaks '
-                      'per selected scan within the m/z range'),
-    }
-    Path(args.metadata).write_text(json.dumps(metadata, indent=2) + '\n',
-                                   encoding='utf-8')
+class MS1MatrixExtractor:
+    """Select MS1 peaks and publish a matrix with its selection settings."""
+
+    def __init__(
+        self,
+        input_path,
+        sample_name,
+        fraction_id,
+        mz_min,
+        mz_max,
+        max_scans,
+        peaks_per_scan,
+    ):
+        self.input_path = input_path
+        self.sample_name = sample_name
+        self.fraction_id = fraction_id
+        self.mz_min = mz_min
+        self.mz_max = mz_max
+        self.max_scans = max_scans
+        self.peaks_per_scan = peaks_per_scan
+
+    def write_matrix(self, path, rows):
+        """Write scan index, retention time, m/z, and intensity."""
+        with open(path, 'w', newline='', encoding='utf-8') as handle:
+            writer = csv.writer(handle, delimiter='\t')
+            writer.writerow(['scan_index', 'rt_sec', 'mz', 'intensity'])
+            for index, rt, mz, intensity in rows:
+                writer.writerow([index, f'{rt:.6f}', f'{mz:.6f}', f'{intensity:.9g}'])
+
+    def write_metadata(self, path, rows, total_scans, selected_scans):
+        """Record acquisition coverage and peak-selection limits."""
+        metadata = {
+            'sample_name': self.sample_name,
+            'fraction_id': self.fraction_id,
+            'total_ms1_scans': total_scans,
+            'selected_ms1_scans': selected_scans,
+            'selected_peaks': len(rows),
+            'rt_min_sec': min(row[1] for row in rows),
+            'rt_max_sec': max(row[1] for row in rows),
+            'mz_min': self.mz_min,
+            'mz_max': self.mz_max,
+            'max_scans': self.max_scans,
+            'peaks_per_scan': self.peaks_per_scan,
+            'selection': ('Evenly spaced MS1 scans across the run; strongest positive peaks '
+                          'per selected scan within the m/z range'),
+        }
+        Path(path).write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
+
+    def run(self, matrix_path, metadata_path):
+        """Load one acquisition, select its peaks, and write both files."""
+        if self.max_scans < 1:
+            raise ValueError('max-scans must be positive')
+        spectra, total_scans = ms1_spectra(self.input_path, self.max_scans)
+        rows, selected_scans = extract_peaks(
+            spectra=spectra,
+            mz_min=self.mz_min,
+            mz_max=self.mz_max,
+            peaks_per_scan=self.peaks_per_scan,
+        )
+        self.write_matrix(matrix_path, rows)
+        self.write_metadata(
+            path=metadata_path,
+            rows=rows,
+            total_scans=total_scans,
+            selected_scans=selected_scans,
+        )
 
 
 def main():
@@ -113,12 +157,16 @@ def main():
     parser.add_argument('--max-scans', type=int, default=350)
     parser.add_argument('--peaks-per-scan', type=int, default=120)
     args = parser.parse_args()
-    if args.max_scans < 1:
-        raise ValueError('max-scans must be positive')
-    spectra, total_scans = ms1_spectra(args.input, args.max_scans)
-    rows, selected_scans = extract_peaks(spectra, args.mz_min, args.mz_max,
-                                         args.peaks_per_scan)
-    write_outputs(args, rows, total_scans, selected_scans)
+    extractor = MS1MatrixExtractor(
+        input_path=args.input,
+        sample_name=args.sample_name,
+        fraction_id=args.fraction_id,
+        mz_min=args.mz_min,
+        mz_max=args.mz_max,
+        max_scans=args.max_scans,
+        peaks_per_scan=args.peaks_per_scan,
+    )
+    extractor.run(args.matrix, args.metadata)
 
 
 if __name__ == '__main__':

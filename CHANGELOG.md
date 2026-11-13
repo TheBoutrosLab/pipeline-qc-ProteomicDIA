@@ -5,6 +5,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add a DIA QC workflow schematic showing input files, Python modules, metrics, MS1 visualization, and cohort aggregation.
+
+### Changed
+
+- Align DIA acquisition, identification, PSM-feature, inference, and quantification metrics with the DDA QC definitions and shared 12-column output contract.
+- Count all retained filtered idXML hits and use sample-level protein-group quantity metrics from the final aggregated DIA-NN report.
+- Refactor acquisition, identification, protein inference, library, quantification, plotting, and metric collection scripts into focused classes.
+- Format Nextflow processes consistently with the DDA QC modules.
+
+### Removed
+
+- Remove DIA isolation-pattern and window-cycle metrics, rank-one validated-hit metrics, and DIA-NN report-row, run-count, and cohort-union missingness metrics.
+
 ## [1.2.1] - 2026-11-12
 
 ### Added

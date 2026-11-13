@@ -7,7 +7,12 @@ process plot_MS1_landscape {
     label 'process_low'
 
     input:
-        tuple val(sample_name), val(fraction_id), path(matrix_file), path(metadata_file)
+        tuple(
+            val(sample_name),
+            val(fraction_id),
+            path(matrix_file),
+            path(metadata_file)
+        )
 
     output:
         path("${sample_name}_${fraction_id}_MS1_landscape.html"), emit: html

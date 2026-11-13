@@ -1,86 +1,113 @@
 #!/usr/bin/env python3
-"""Summarize scan timing and DIA windows from one mzML."""
-
+"""Summarize one DIA mzML or Bruker acquisition with pyOpenMS."""
 import argparse
-
+from collections import namedtuple
 from AcquisitionReader import load_acquisition
 from QCMetrics import Metrics, finite
 
+ScanRecord = namedtuple('ScanRecord', ('rt', 'ms_level', 'tic'))
 
-def run(args):
-    """Summarize acquisition timing, scan counts, windows, and signal."""
-    metrics = Metrics(args.dataset_id, args.sample_name, args.input, "acquisition",
-                      fraction_id=args.fraction_id)
-    times, ms1_times, ms2_times, tic, windows = [], [], [], [], []
-    window_lowers, window_uppers, window_widths, window_times = [], [], [], []
-    ms2_per_cycle = []
-    cycle_ms2 = 0
-    experiment = load_acquisition(args.input)
-    for spectrum in experiment.getSpectra():
-        level = spectrum.getMSLevel()
+
+class MzMLSummarizer:
+    """Collect acquisition QC from one mzML fraction."""
+
+    def __init__(self, mzml_path, dataset_id, sample_name, fraction_id):
+        self.mzml_path = mzml_path
+        self.metrics = Metrics(
+            dataset_id=dataset_id,
+            layer='acquisition',
+            source=mzml_path,
+            sample_name=sample_name,
+            fraction_id=fraction_id,
+        )
+        self.scans = []
+
+    def load(self):
+        """Read spectra with OpenMS and collect the fields needed for QC."""
+        experiment = load_acquisition(self.mzml_path)
+        for spectrum in experiment.getSpectra():
+            self.record_spectrum(spectrum)
+        if not self.scans:
+            raise ValueError('acquisition has no spectra')
+
+    def record_spectrum(self, spectrum):
+        """Record retention time, MS level, and TIC for one spectrum."""
         rt = finite(spectrum.getRT())
-        if rt is None:
-            raise ValueError("Invalid scan start time")
-        if times and rt < times[-1]:
-            raise ValueError("Nonmonotonic mzML scan times")
-        times.append(rt)
-        if level == 1:
-            if ms1_times:
-                ms2_per_cycle.append(cycle_ms2)
-            ms1_times.append(rt)
-            cycle_ms2 = 0
-        elif level == 2:
-            ms2_times.append(rt)
-            cycle_ms2 += 1
-            for precursor in spectrum.getPrecursors():
-                center = finite(precursor.getMZ())
-                if center is None:
-                    continue
-                windows.append(center)
-                window_times.append((rt, center))
-                lo = finite(precursor.getIsolationWindowLowerOffset())
-                hi = finite(precursor.getIsolationWindowUpperOffset())
-                if lo is not None and hi is not None:
-                    window_lowers.append(center - lo)
-                    window_uppers.append(center + hi)
-                    window_widths.append(lo + hi)
+        if rt is None or (self.scans and rt < self.scans[-1].rt):
+            raise ValueError('acquisition has missing or nonmonotonic retention time')
         _, intensities = spectrum.get_peaks()
-        if len(intensities):
-            tic.append(float(sum(intensities)))
-    if not times:
-        raise ValueError("mzML contains no spectra")
-    duration = times[-1] - times[0]
-    metrics.add("acquisition_duration", duration / 60, "min")
-    metrics.add("scan_count", len(times))
-    metrics.add("ms1_scan_count", len(ms1_times))
-    metrics.add("ms2_scan_count", len(ms2_times))
-    if duration > 0:
-        metrics.add("scan_rate", len(times) / duration, "scan/s")
-        metrics.add("ms1_scan_rate", len(ms1_times) / duration, "scan/s")
-        metrics.add("ms2_scan_rate", len(ms2_times) / duration, "scan/s")
-    metrics.distribution("ms1_cycle_time", [b - a for a, b in zip(ms1_times, ms1_times[1:])], "s")
-    metrics.distribution("ms2_scans_per_cycle", ms2_per_cycle)
-    if not ms1_times and windows:
-        first = windows[0]
-        repeated = [rt for rt, center in window_times if center == first]
-        metrics.distribution("dia_cycle_time", [b - a for a, b in zip(repeated, repeated[1:])], "s")
-    else:
-        cycle_times = [end - start for start, end in zip(ms1_times, ms1_times[1:])]
-        metrics.distribution("dia_cycle_time", cycle_times, "s")
-    metrics.distribution("total_ion_current", tic)
-    metrics.add("distinct_isolation_target_count", len(set(windows)))
-    if window_lowers:
-        metrics.add("isolation_mz_min", min(window_lowers), "m/z")
-        metrics.add("isolation_mz_max", max(window_uppers), "m/z")
-        metrics.distribution("isolation_width", window_widths, "m/z")
-    metrics.write(args.output)
+        tic = float(sum(intensities)) if len(intensities) else None
+        self.scans.append(ScanRecord(rt, spectrum.getMSLevel(), tic))
+
+    def summarize_duration_and_rates(self):
+        """Report observed scan counts and rates over recorded duration."""
+        duration = self.scans[-1].rt - self.scans[0].rt
+        self.metrics.add(
+            name='acquisition_duration',
+            value=duration / 60,
+            unit='min',
+        )
+        counts = (('scan', len(self.scans)),
+                  ('ms1_scan', sum(scan.ms_level == 1 for scan in self.scans)),
+                  ('ms2_scan', sum(scan.ms_level == 2 for scan in self.scans)))
+        for name, count in counts:
+            self.metrics.add(f'{name}_count', count)
+            if duration > 0:
+                self.metrics.add(
+                    name=f'{name}_rate',
+                    value=count / duration,
+                    unit='scan/s',
+                )
+            else:
+                self.metrics.unavailable(f'{name}_rate', 'scan/s')
+
+    def summarize_cycles(self):
+        """Report successive MS1 intervals and their MS2 scan counts."""
+        ms1_times = []
+        ms2_per_cycle = []
+        current_ms2_count = 0
+        for scan in self.scans:
+            if scan.ms_level == 1:
+                if ms1_times:
+                    ms2_per_cycle.append(current_ms2_count)
+                ms1_times.append(scan.rt)
+                current_ms2_count = 0
+            elif scan.ms_level == 2:
+                current_ms2_count += 1
+        intervals = (end - start for start, end in zip(ms1_times, ms1_times[1:]))
+        self.metrics.distribution(
+            name='ms1_cycle_time',
+            values=intervals,
+            unit='s',
+        )
+        self.metrics.distribution('ms2_scans_per_cycle', ms2_per_cycle)
+
+    def summarize_tic(self):
+        """Report per-spectrum total ion current."""
+        self.metrics.distribution(
+            name='total_ion_current',
+            values=(scan.tic for scan in self.scans),
+            unit='intensity',
+        )
+
+    def run(self, output_path):
+        """Read the mzML and write its acquisition QC metrics."""
+        self.load()
+        self.summarize_duration_and_rates()
+        self.summarize_cycles()
+        self.summarize_tic()
+        self.metrics.write(output_path)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", required=True)
-    parser.add_argument("--output", required=True)
-    parser.add_argument("--sample-name", required=True)
-    parser.add_argument("--fraction-id", required=True)
-    parser.add_argument("--dataset-id", required=True)
-    run(parser.parse_args())
+    for argument in ('input', 'output', 'sample-name', 'fraction-id', 'dataset-id'):
+        parser.add_argument('--' + argument, required=True)
+    args = parser.parse_args()
+    summarizer = MzMLSummarizer(
+        mzml_path=args.input,
+        dataset_id=args.dataset_id,
+        sample_name=args.sample_name,
+        fraction_id=args.fraction_id,
+    )
+    summarizer.run(args.output)

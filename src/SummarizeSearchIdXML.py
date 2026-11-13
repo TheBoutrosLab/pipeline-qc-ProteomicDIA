@@ -2,7 +2,7 @@
 """Summarize unfiltered MSFragger idXML peptide-hit scores."""
 
 import argparse
-from QCMetrics import Metrics, score_summary
+from SummarizeIdXML import IdXMLSummarizer
 
 
 if __name__ == "__main__":
@@ -12,6 +12,11 @@ if __name__ == "__main__":
     parser.add_argument("--sample-name", required=True)
     parser.add_argument("--dataset-id", required=True)
     args = parser.parse_args()
-    metrics = Metrics(args.dataset_id, args.sample_name, args.input, "raw_identification")
-    score_summary(metrics, args.input)
-    metrics.write(args.output)
+    summarizer = IdXMLSummarizer(
+        input_path=args.input,
+        dataset_id=args.dataset_id,
+        sample_name=args.sample_name,
+        search_engine="MSFragger",
+        stage="search",
+    )
+    summarizer.run(args.output)
