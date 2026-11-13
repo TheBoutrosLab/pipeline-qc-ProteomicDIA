@@ -1,5 +1,7 @@
 # pipeline-qc-ProteomicDIA
 
+![DIA QC workflow schematic](img/flow-diagram.svg?raw=true)
+
 This Nextflow DSL2 pipeline collects quality-control metrics from a completed `metapipeline-ProteomicDIA` cohort. It summarizes each sample's mzML or original Bruker `.d` acquisition, unfiltered MSFragger search idXML, and final filtered idXML; the selected protein-inference route; the cohort EasyPQP library; and the DIA-NN report. It also writes an interactive 3D MS1 peak map for each acquisition.
 
 ## How to run
@@ -97,18 +99,20 @@ sample_02,/data/validation/sample_02/ProtLoom-0.2.3/output/sample_02_groups.tsv
 
 | Process | Input | Result |
 | --- | --- | --- |
-| `summarize_mzML` | One mzML or Bruker `.d` acquisition per sample/fraction | Acquisition duration, scan counts and rates, cycle timing, isolation windows, and TIC. |
+| `summarize_mzML` | One mzML or Bruker `.d` acquisition per sample/fraction | Acquisition duration, scan counts and rates, MS1 intervals, MS2 scans per interval, and TIC. |
 | `extract_MS1_matrix` | One mzML or Bruker `.d` acquisition per sample/fraction | Bounded RT, m/z, and intensity matrix plus selection metadata. |
 | `plot_MS1_landscape` | MS1 matrix and metadata | Offline interactive 3D stick spectrum in HTML. |
-| `summarize_search_idXML` | One unfiltered search idXML per sample | Candidate and best-hit counts, search-score percentiles, and charge counts. |
-| `summarize_filtered_idXML` | One final filtered idXML per sample | Accepted PSM and distinct peptide counts and score percentiles. |
+| `summarize_search_idXML` | One unfiltered search idXML per sample | Candidate counts; one finite-score top hit per identification record; search scores, precursor charges, and precursor mass error. |
+| `summarize_filtered_idXML` | One final filtered idXML per sample | Counts, scores, and distinct peptide sequences across all retained PSMs. |
 | `summarize_PSMFeatures` | One published MSBooster PIN or PSMFeatureExtractor idXML | Target/decoy feature counts and distributions, with mass-error and RT-deviation summaries when available. |
 | `summarize_ProteinGroups_*` | One selected inference route | Cohort protein-group counts, sizes, and probabilities when available. |
 | `summarize_EasyPQP_library` | Library and export summary | Cohort transition, precursor, peptide, and export counts. |
-| `summarize_DIANN_report` | Final aggregated DIA-NN report | Per-sample quantified counts, intensity percentiles, and precursor missingness. |
+| `summarize_DIANN_report` | Final aggregated DIA-NN report | Per-sample quantified precursor and protein-group counts and log10 quantity distributions. |
 | `collect_QCMetrics` | All stage metric TSVs | Combined QC metric table. |
 
-The MS1 matrix contains up to 120 strongest positive peaks from each of 350 evenly spaced MS1 scans within m/z 300–1200. The HTML embeds Plotly and works offline. The plot colors encode within-sample log-intensity percentiles: yellow (0–25), orange (25–50), red (50–75), purple (75–95), and blue (95–100). Colors therefore do not represent the same absolute intensity across samples. Continuous-value metric summaries include nonmissing and missing counts and the 5th, 25th, 50th, 75th, and 95th percentiles. PSM feature summaries use actual PIN columns or OpenMS `extra_features` metadata: `deltamass`, `dm`, `absdm`, RT delta/difference fields, and spectral angle, entropy, correlation, or cosine fields when present. The original feature name is retained in `metric_name`. `deltamass` is an m/z difference; when `CalcMass` is present, the pipeline also reports signed and absolute error in ppm. Other source feature units are left blank unless established by the source. No RT delta is inferred from a search idXML lacking a prediction feature; its status is `unavailable`. Target and decoy are summarized separately alongside all PSMs. Feature-derived mass error is labeled by `source_process` and remains distinct from any raw search metric.
+The MS1 matrix contains up to 120 strongest positive peaks from each of 350 evenly spaced MS1 scans within m/z 300–1200. The HTML embeds Plotly and works offline. The plot colors encode within-sample log-intensity percentiles: yellow (0–25), orange (25–50), red (50–75), purple (75–95), and blue (95–100). Colors therefore do not represent the same absolute intensity across samples. Continuous-value metric summaries include nonmissing and missing counts and the 5th, 25th, 50th, 75th, and 95th percentiles. PSM feature summaries use actual PIN columns or OpenMS `extra_features` metadata: `deltamass`, `dm`, `absdm`, RT delta/difference fields, and spectral angle, entropy, correlation, or cosine fields when present. The original feature name is retained in `metric_name`. `deltamass` is an m/z difference; when `CalcMass` is present, the pipeline also reports signed and absolute error in ppm. Other source feature units are left blank unless established by the source. An absent optional RT or spectral feature produces no metric rows. Target and decoy are summarized separately alongside all PSMs. Feature-derived mass error is labeled by `source_process` and remains distinct from the raw-search precursor mass error.
+
+The merged table uses `group=all` for acquisition, protein inference, library, and DIA-NN metrics. Identification and PSM-feature distributions also use `target`, `decoy`, and `unknown`; raw precursor-charge categories use `all:zN`, `target:zN`, `decoy:zN`, or `unknown:zN`. The final DIA-NN report contributes sample-level quantification rows with a blank `fraction_id`, even when the acquisition has multiple fractions. TIC is the sum of recorded intensities in each nonempty spectrum; empty spectra contribute to `total_ion_current_missing_count`, and percentile rows use `unit=intensity`. A required distribution whose source field is absent has seven `status=unavailable` rows; absent optional source features produce no rows.
 
 Bruker `.d` reading loads an OpenMS experiment in memory before MS1 scan selection. Allocate sufficient memory for full MS1 frames. Raw Bruker frame/window-spectrum counts can differ from counts in diaTracer's reconstructed mzML.
 

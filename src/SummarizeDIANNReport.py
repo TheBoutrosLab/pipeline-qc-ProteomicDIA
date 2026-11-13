@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize DIA-NN reports by acquisition and combined sample."""
+"""Summarize the final aggregated DIA-NN report by sample."""
 
 import argparse
 import csv
@@ -16,7 +16,7 @@ def first(columns, candidates):
 
 
 def run_lookup(path):
-    """Map unambiguous DIA-NN run labels to sample and fraction pairs."""
+    """Map unambiguous DIA-NN run labels to biological samples."""
     lookup = {}
     pairs = set()
     with open(path, newline="", encoding="utf-8") as handle:
@@ -36,122 +36,118 @@ def run_lookup(path):
                 paths.append(Path(row["acquisition_path"]))
             for path_value in paths:
                 for key in (path_value.name, path_value.stem):
-                    if key in lookup and lookup[key] != pair:
+                    if key in lookup and lookup[key] != sample:
                         raise ValueError(f"Ambiguous DIA-NN run key: {key}")
-                    lookup[key] = pair
-    counts = defaultdict(int)
+                    lookup[key] = sample
     for sample, _ in pairs:
-        counts[sample] += 1
-    for sample, fraction in pairs:
-        target = (sample, fraction) if counts[sample] == 1 else (sample, "")
-        if sample in lookup and lookup[sample] != target:
+        if sample in lookup and lookup[sample] != sample:
             raise ValueError(f"Ambiguous DIA-NN run key: {sample}")
-        lookup[sample] = target
-    return lookup, pairs
+        lookup[sample] = sample
+    return lookup
 
 
-def summarize(args):
-    """Write acquisition, sample, and cohort quantification metrics."""
-    lookup, _ = run_lookup(args.sample_csv)
-    precursors = defaultdict(set)
-    proteins = defaultdict(set)
-    precursor_values = defaultdict(dict)
-    protein_values = defaultdict(dict)
-    run_rows = defaultdict(int)
-    run_names = {}
-    has_protein = False
-    has_precursor_quantity = False
-    has_protein_quantity = False
-    with open(args.input, newline="", encoding="utf-8") as handle:
-        reader = csv.DictReader(handle, delimiter="\t")
-        columns = set(reader.fieldnames or [])
-        run_col = first(columns, ("Run", "File.Name"))
-        precursor_col = first(columns, ("Precursor.Id", "Precursor.ID"))
-        precursor_quantity = first(columns, (
-            "Precursor.Quantity", "Precursor.Normalised", "Precursor.Translated"))
-        protein_col = first(columns, ("Protein.Group", "Protein.Ids"))
-        protein_quantity = first(columns, ("PG.Quantity", "PG.Normalised"))
-        if not run_col or not precursor_col:
+class DIANNReportSummarizer:
+    """Summarize final aggregated DIA-NN quantities at the sample level."""
+
+    def __init__(self, input_path, sample_csv, dataset_id):
+        self.input_path = input_path
+        self.lookup = run_lookup(sample_csv)
+        self.metrics = Metrics(dataset_id, "", input_path, "quantification")
+        self.precursors = defaultdict(set)
+        self.proteins = defaultdict(set)
+        self.precursor_values = defaultdict(dict)
+        self.protein_values = defaultdict(dict)
+        self.observed_samples = set()
+        self.columns = {}
+
+    def select_columns(self, columns):
+        """Identify the current DIA-NN report columns used by QC."""
+        self.columns = {
+            "run": first(columns, ("Run", "File.Name")),
+            "precursor": first(columns, ("Precursor.Id", "Precursor.ID")),
+            "precursor_quantity": first(columns, (
+                "Precursor.Quantity", "Precursor.Normalised", "Precursor.Translated")),
+            "protein": first(columns, ("Protein.Group", "Protein.Ids")),
+            "protein_quantity": first(columns, ("PG.Quantity", "PG.Normalised")),
+        }
+        if not self.columns["run"] or not self.columns["precursor"]:
             raise ValueError("DIA-NN report needs Run and Precursor.Id")
-        has_protein |= bool(protein_col)
-        has_precursor_quantity |= bool(precursor_quantity)
-        has_protein_quantity |= bool(protein_quantity)
-        for row in reader:
-            run_name = row[run_col]
-            candidates = [run_name, Path(run_name).name, Path(run_name).stem]
-            matches = {lookup[key] for key in candidates if key in lookup}
-            if len(matches) != 1:
-                raise ValueError(f"Unknown or ambiguous DIA-NN run: {run_name}")
-            pair = matches.pop()
-            if run_name in run_names and run_names[run_name] != pair:
-                raise ValueError(f"DIA-NN run maps to multiple acquisitions: {run_name}")
-            run_names[run_name] = pair
-            run_rows[pair] += 1
-            precursor = row[precursor_col]
-            precursor_amount = finite(row[precursor_quantity]) if precursor_quantity else None
-            if precursor and (not precursor_quantity or
-                              (precursor_amount is not None and precursor_amount > 0)):
-                precursors[pair].add(precursor)
-            protein = row[protein_col] if protein_col else ""
-            protein_amount = finite(row[protein_quantity]) if protein_quantity else None
-            if protein and (not protein_quantity or
-                            (protein_amount is not None and protein_amount > 0)):
-                proteins[pair].add(protein)
-            if precursor and precursor_amount is not None and precursor_amount > 0:
-                precursor_values[pair][precursor] = max(
-                    precursor_values[pair].get(precursor, 0), precursor_amount)
-            if protein and protein_amount is not None and protein_amount > 0:
-                protein_values[pair][protein] = max(
-                    protein_values[pair].get(protein, 0), protein_amount)
-    if not run_rows:
-        raise ValueError("DIA-NN report is empty")
-    cohort_precursors = set().union(*precursors.values())
-    metrics = Metrics(args.dataset_id, "", args.input, "quantification")
-    metrics.add("diann_run_count", len(run_rows))
-    metrics.add("cohort_precursor_count", len(cohort_precursors))
 
-    def write_group(sample, fraction, row_count, precursor_set, protein_set,
-                    precursor_amounts, protein_amounts):
-        metrics.sample_name = sample
-        metrics.context["fraction_id"] = fraction
-        metrics.add("report_row_count", row_count)
-        metrics.add("quantified_precursor_count", len(precursor_set))
-        missing = len(cohort_precursors - precursor_set)
-        metrics.add("precursor_missing_from_cohort_union", missing)
-        if cohort_precursors:
-            metrics.add("precursor_missing_fraction", missing / len(cohort_precursors), "fraction")
-        if has_protein:
-            metrics.add("quantified_protein_group_count", len(protein_set))
-        if has_precursor_quantity:
-            values = [math.log10(v) for v in precursor_amounts.values()]
-            metrics.distribution("precursor_quantity_log10", values, "log10 intensity")
-        if has_protein_quantity:
-            values = [math.log10(v) for v in protein_amounts.values()]
-            metrics.distribution("protein_quantity_log10", values, "log10 intensity")
+    def sample_for_row(self, row):
+        """Map a DIA-NN run label to exactly one biological sample."""
+        run_name = row[self.columns["run"]]
+        candidates = (run_name, Path(run_name).name, Path(run_name).stem)
+        matches = {self.lookup[key] for key in candidates if key in self.lookup}
+        if len(matches) != 1:
+            raise ValueError(f"Unknown or ambiguous DIA-NN run: {run_name}")
+        return matches.pop()
 
-    observed_pairs = sorted(run_rows)
-    for sample, fraction in observed_pairs:
-        pair = sample, fraction
-        write_group(sample, fraction, run_rows[pair], precursors[pair], proteins[pair],
-                    precursor_values[pair], protein_values[pair])
-    samples = sorted({sample for sample, _ in observed_pairs})
-    for sample in samples:
-        sample_pairs = [pair for pair in observed_pairs if pair[0] == sample]
-        if len(sample_pairs) == 1:
-            continue
-        combined_precursors = set().union(*(precursors[pair] for pair in sample_pairs))
-        combined_proteins = set().union(*(proteins[pair] for pair in sample_pairs))
-        combined_precursor_values = {}
-        combined_protein_values = {}
-        for pair in sample_pairs:
-            for key, value in precursor_values[pair].items():
-                combined_precursor_values[key] = combined_precursor_values.get(key, 0) + value
-            for key, value in protein_values[pair].items():
-                combined_protein_values[key] = combined_protein_values.get(key, 0) + value
-        write_group(sample, "", sum(run_rows[pair] for pair in sample_pairs),
-                    combined_precursors, combined_proteins,
-                    combined_precursor_values, combined_protein_values)
-    metrics.write(args.output)
+    def record_row(self, row):
+        """Collect distinct identities and positive quantities for one report row."""
+        sample = self.sample_for_row(row)
+        self.observed_samples.add(sample)
+        precursor = row[self.columns["precursor"]]
+        quantity_column = self.columns["precursor_quantity"]
+        precursor_amount = finite(row[quantity_column]) if quantity_column else None
+        if precursor and (not quantity_column or
+                          (precursor_amount is not None and precursor_amount > 0)):
+            self.precursors[sample].add(precursor)
+        protein_column = self.columns["protein"]
+        protein = row[protein_column] if protein_column else ""
+        protein_quantity_column = self.columns["protein_quantity"]
+        protein_amount = finite(row[protein_quantity_column]) if protein_quantity_column else None
+        if protein and (not protein_quantity_column or
+                        (protein_amount is not None and protein_amount > 0)):
+            self.proteins[sample].add(protein)
+        if precursor and precursor_amount is not None and precursor_amount > 0:
+            self.precursor_values[sample][precursor] = max(
+                self.precursor_values[sample].get(precursor, 0),
+                precursor_amount,
+            )
+        if protein and protein_amount is not None and protein_amount > 0:
+            self.protein_values[sample][protein] = max(
+                self.protein_values[sample].get(protein, 0),
+                protein_amount,
+            )
+
+    def load(self):
+        """Read the aggregated report and collect per-sample values."""
+        with open(self.input_path, newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            self.select_columns(set(reader.fieldnames or []))
+            for row in reader:
+                self.record_row(row)
+        if not self.observed_samples:
+            raise ValueError("DIA-NN report is empty")
+
+    def summarize_sample(self, sample):
+        """Write distinct identity counts and log10 quantity distributions."""
+        self.metrics.sample_name = sample
+        self.metrics.add("quantified_precursor_count", len(self.precursors[sample]))
+        if self.columns["protein"]:
+            self.metrics.add("quantified_protein_group_count", len(self.proteins[sample]))
+        else:
+            self.metrics.unavailable("quantified_protein_group_count")
+        if self.columns["precursor_quantity"]:
+            values = [math.log10(value) for value in self.precursor_values[sample].values()]
+            self.metrics.distribution("precursor_quantity_log10", values, "log10 intensity")
+        else:
+            self.metrics.unavailable_distribution("precursor_quantity_log10", "log10 intensity")
+        if self.columns["protein_quantity"]:
+            values = [math.log10(value) for value in self.protein_values[sample].values()]
+            self.metrics.distribution("protein_group_quantity_log10", values, "log10 intensity")
+        else:
+            self.metrics.unavailable_distribution(
+                name="protein_group_quantity_log10",
+                unit="log10 intensity",
+            )
+
+    def run(self, output_path):
+        """Read the report and write one QC table for all observed samples."""
+        self.load()
+        for sample in sorted(self.observed_samples):
+            self.summarize_sample(sample)
+        self.metrics.write(output_path)
 
 
 if __name__ == "__main__":
@@ -160,4 +156,10 @@ if __name__ == "__main__":
     parser.add_argument("--sample-csv", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--dataset-id", required=True)
-    summarize(parser.parse_args())
+    args = parser.parse_args()
+    summarizer = DIANNReportSummarizer(
+        input_path=args.input,
+        sample_csv=args.sample_csv,
+        dataset_id=args.dataset_id,
+    )
+    summarizer.run(args.output)

@@ -7,11 +7,20 @@ process extract_MS1_matrix {
     label 'process_low'
 
     input:
-        tuple val(sample_name), val(fraction_id), path(input_file)
+        tuple(
+            val(sample_name),
+            val(fraction_id),
+            path(input_file)
+        )
 
     output:
-        tuple val(sample_name), val(fraction_id), path("${sample_name}_${fraction_id}_MS1_matrix.tsv"),
-              path("${sample_name}_${fraction_id}_MS1_matrix.json"), emit: matrix
+        tuple(
+            val(sample_name),
+            val(fraction_id),
+            path("${sample_name}_${fraction_id}_MS1_matrix.tsv"),
+            path("${sample_name}_${fraction_id}_MS1_matrix.json"),
+            emit: matrix
+        )
 
     script:
     """

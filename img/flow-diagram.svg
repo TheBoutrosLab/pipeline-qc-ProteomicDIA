@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 1400 1180" role="img" aria-labelledby="title desc">
+  <title id="title">DIA quality-control workflow schematic</title>
+  <desc id="desc">DIA input files flow through seven layer-specific summarizers to metric tables, which are collected into one cohort QC table. Acquisition data also generate a separate interactive MS1 figure.</desc>
+  <rect x="0" y="0" width="1400" height="1180" fill="white"/>
+    <path d="M425,139L470,139" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M880,139L925,139" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M1325,139L1365,139" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <rect x="80" y="100" width="345" height="78" rx="12" fill="#EFF4F8" stroke="#9BB1C2" stroke-width="2"/>
+    <text x="252.5" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">mzML CSV + acquisitions</text>
+    <text x="252.5" y="158" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">one row per sample and fraction</text>
+    <rect x="470" y="100" width="410" height="78" rx="12" fill="white" stroke="#7398C7" stroke-width="2"/>
+    <text x="675" y="124" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">summarize_mzML</text>
+    <text x="675" y="146" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">SummarizeMzML.py</text>
+    <text x="675" y="166" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">scan counts, rates, intervals, TIC</text>
+    <rect x="925" y="100" width="400" height="78" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="1125" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Acquisition metrics</text>
+    <text x="1125" y="158" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">per sample and fraction</text>
+    <path d="M425,251L470,251" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M880,251L925,251" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M1325,251L1365,251" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <rect x="80" y="212" width="345" height="78" rx="12" fill="#EFF4F8" stroke="#9BB1C2" stroke-width="2"/>
+    <text x="252.5" y="244" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Search idXML CSV</text>
+    <text x="252.5" y="270" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">unfiltered, one file per sample</text>
+    <rect x="470" y="212" width="410" height="78" rx="12" fill="white" stroke="#7398C7" stroke-width="2"/>
+    <text x="675" y="236" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">summarize_search_idXML</text>
+    <text x="675" y="258" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">SummarizeSearchIdXML.py</text>
+    <text x="675" y="278" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">candidate hits, top scores, mass error</text>
+    <rect x="925" y="212" width="400" height="78" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="1125" y="244" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Raw identification metrics</text>
+    <text x="1125" y="270" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">per sample</text>
+    <path d="M425,363L470,363" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M880,363L925,363" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M1325,363L1365,363" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <rect x="80" y="324" width="345" height="78" rx="12" fill="#EFF4F8" stroke="#9BB1C2" stroke-width="2"/>
+    <text x="252.5" y="356" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">PSM features CSV (optional)</text>
+    <text x="252.5" y="382" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">MSBooster PIN or feature idXML</text>
+    <rect x="470" y="324" width="410" height="78" rx="12" fill="white" stroke="#70AA90" stroke-width="2"/>
+    <text x="675" y="348" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">summarize_PSMFeatures</text>
+    <text x="675" y="370" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">SummarizePSMFeatures.py</text>
+    <text x="675" y="390" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">mass, RT, spectral, enzyme features</text>
+    <rect x="925" y="324" width="400" height="78" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="1125" y="356" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">PSM feature metrics</text>
+    <text x="1125" y="382" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">per published feature file</text>
+    <path d="M425,475L470,475" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M880,475L925,475" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M1325,475L1365,475" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <rect x="80" y="436" width="345" height="78" rx="12" fill="#EFF4F8" stroke="#9BB1C2" stroke-width="2"/>
+    <text x="252.5" y="468" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Filtered idXML CSV</text>
+    <text x="252.5" y="494" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">final validated file per sample</text>
+    <rect x="470" y="436" width="410" height="78" rx="12" fill="white" stroke="#7398C7" stroke-width="2"/>
+    <text x="675" y="460" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">summarize_filtered_idXML</text>
+    <text x="675" y="482" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">SummarizeFilteredIdXML.py</text>
+    <text x="675" y="502" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">accepted PSMs and validated scores</text>
+    <rect x="925" y="436" width="400" height="78" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="1125" y="468" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Validated identification metrics</text>
+    <text x="1125" y="494" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">per sample</text>
+    <path d="M425,587L470,587" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M880,587L925,587" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M1325,587L1365,587" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <rect x="80" y="548" width="345" height="78" rx="12" fill="#EFF4F8" stroke="#9BB1C2" stroke-width="2"/>
+    <text x="252.5" y="580" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Protein inference file</text>
+    <text x="252.5" y="606" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">idXML, Fido JSON, or ProtLoom CSV</text>
+    <rect x="470" y="548" width="410" height="78" rx="12" fill="white" stroke="#7398C7" stroke-width="2"/>
+    <text x="675" y="572" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">summarize_ProteinGroups_*</text>
+    <text x="675" y="593" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#526879">SummarizeProteinProphetGroups.py · SummarizeFidoGroups.py</text>
+    <text x="675" y="612" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#526879">SummarizeEpifanyGroups.py · SummarizeProtLoomGroups.py</text>
+    <rect x="925" y="548" width="400" height="78" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="1125" y="580" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Protein inference metrics</text>
+    <text x="1125" y="606" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">cohort level</text>
+    <path d="M425,699L470,699" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M880,699L925,699" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M1325,699L1365,699" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <rect x="80" y="660" width="345" height="78" rx="12" fill="#EFF4F8" stroke="#9BB1C2" stroke-width="2"/>
+    <text x="252.5" y="692" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">EasyPQP library + export TSV</text>
+    <text x="252.5" y="718" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">cohort spectral library and counts</text>
+    <rect x="470" y="660" width="410" height="78" rx="12" fill="white" stroke="#7398C7" stroke-width="2"/>
+    <text x="675" y="684" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">summarize_EasyPQP_library</text>
+    <text x="675" y="706" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">SummarizeEasyPQPLibrary.py</text>
+    <text x="675" y="726" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">transition, precursor, peptide counts</text>
+    <rect x="925" y="660" width="400" height="78" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="1125" y="692" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Spectral library metrics</text>
+    <text x="1125" y="718" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">cohort level</text>
+    <path d="M425,811L470,811" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M880,811L925,811" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M1325,811L1365,811" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <rect x="80" y="772" width="345" height="78" rx="12" fill="#EFF4F8" stroke="#9BB1C2" stroke-width="2"/>
+    <text x="252.5" y="804" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Final DIA-NN report TSV</text>
+    <text x="252.5" y="830" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">aggregated across fractions</text>
+    <rect x="470" y="772" width="410" height="78" rx="12" fill="white" stroke="#7398C7" stroke-width="2"/>
+    <text x="675" y="796" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">summarize_DIANN_report</text>
+    <text x="675" y="818" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">SummarizeDIANNReport.py</text>
+    <text x="675" y="838" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">counts and abundance distributions</text>
+    <rect x="925" y="772" width="400" height="78" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="1125" y="804" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Quantification metrics</text>
+    <text x="1125" y="830" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">per sample</text>
+    <path d="M1365,139L1365,962" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <path d="M1365,962L1325,962" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <text x="80" y="895" text-anchor="start" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#173044">MS1 visualization · separate output</text>
+    <path d="M80,139L42,139" fill="none" stroke="#70AA90" stroke-width="2.5"/>
+    <path d="M42,139L42,962" fill="none" stroke="#70AA90" stroke-width="2.5"/>
+    <path d="M42,962L80,962" fill="none" stroke="#70AA90" stroke-width="2.5"/>
+    <rect x="80" y="923" width="345" height="78" rx="12" fill="white" stroke="#70AA90" stroke-width="2"/>
+    <text x="252.5" y="947" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">extract_MS1_matrix</text>
+    <text x="252.5" y="969" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">ExtractMS1Matrix.py</text>
+    <text x="252.5" y="989" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">selected RT, m/z, intensity peaks</text>
+    <path d="M425,962L470,962" fill="none" stroke="#70AA90" stroke-width="2.5"/>
+    <rect x="470" y="923" width="410" height="78" rx="12" fill="white" stroke="#70AA90" stroke-width="2"/>
+    <text x="675" y="947" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">plot_MS1_landscape</text>
+    <text x="675" y="969" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">PlotMS1Landscape.py</text>
+    <text x="675" y="989" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">offline 3D Plotly figure</text>
+    <path d="M675,1001L675,1040" fill="none" stroke="#70AA90" stroke-width="2.5"/>
+    <rect x="470" y="1042" width="410" height="82" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="675" y="1075" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">MS1 peak-map HTML</text>
+    <text x="675" y="1101" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">one interactive figure per acquisition</text>
+    <text x="925" y="895" text-anchor="start" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#173044">Metric aggregation</text>
+    <rect x="925" y="923" width="400" height="78" rx="12" fill="white" stroke="#7398C7" stroke-width="2"/>
+    <text x="1125" y="947" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">collect_QCMetrics</text>
+    <text x="1125" y="969" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#526879">CollectQCMetrics.py</text>
+    <text x="1125" y="989" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">merge and order layer metric TSVs</text>
+    <path d="M1125,1001L1125,1040" fill="none" stroke="#4B6172" stroke-width="2.5"/>
+    <rect x="925" y="1042" width="400" height="82" rx="12" fill="#FFF8E8" stroke="#D2A956" stroke-width="2"/>
+    <text x="1125" y="1075" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#173044">Cohort QC metrics TSV</text>
+    <text x="1125" y="1101" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#526879">&lt;dataset_id&gt;_QC_metrics.tsv · 12 columns</text>
+</svg>

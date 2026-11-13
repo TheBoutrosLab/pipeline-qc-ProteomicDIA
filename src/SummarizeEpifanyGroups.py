@@ -2,7 +2,7 @@
 """Summarize cohort Epifany groups in idXML."""
 
 import argparse
-from ProteinGroupMetrics import summarize_idxml
+from ProteinGroupMetrics import ProteinGroupSummarizer
 
 
 if __name__ == "__main__":
@@ -11,4 +11,9 @@ if __name__ == "__main__":
     parser.add_argument("--output", required=True)
     parser.add_argument("--dataset-id", required=True)
     args = parser.parse_args()
-    summarize_idxml(args.input, args.dataset_id, args.output, "Epifany")
+    summarizer = ProteinGroupSummarizer(
+        input_path=args.input,
+        dataset_id=args.dataset_id,
+        route="Epifany",
+    )
+    summarizer.run(args.output)

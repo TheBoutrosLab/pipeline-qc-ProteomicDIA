@@ -7,7 +7,11 @@ process summarize_mzML {
     label 'process_low'
 
     input:
-        tuple val(sample_name), val(fraction_id), path(input_file)
+        tuple(
+            val(sample_name),
+            val(fraction_id),
+            path(input_file)
+        )
 
     output:
         path("${sample_name}_${fraction_id}_mzML_metrics.tsv"), emit: metrics

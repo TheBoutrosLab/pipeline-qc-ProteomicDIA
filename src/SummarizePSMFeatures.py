@@ -8,12 +8,19 @@ from collections import Counter, defaultdict
 
 import pyopenms as oms
 
-from QCMetrics import Metrics, as_text, finite
+from QCMetrics import Metrics, as_text as text, finite
+
+SIMILARITY_FEATURES = (
+    "spectralangle",
+    "spectralentropy",
+    "spectralcorrelation",
+    "spectralcosine",
+)
 
 
 def target_decoy(value):
     """Normalize a PIN label or idXML target/decoy annotation."""
-    label = as_text(value).strip().lower()
+    label = text(value).strip().lower()
     if label in ("1", "+1", "target"):
         return "target"
     if label in ("-1", "decoy"):
@@ -24,11 +31,13 @@ def target_decoy(value):
 def selected_feature(name):
     """Select interpretable feature families, excluding identifiers and scores."""
     normalized = re.sub(r"[^a-z0-9]", "", name.lower())
-    return (normalized in ("deltamass", "dm", "absdm") or
-            ("rt" in normalized and ("delta" in normalized or "diff" in normalized)) or
-            ("retention" in normalized and ("delta" in normalized or "diff" in normalized)) or
-            any(word in normalized for word in ("spectralangle", "spectralentropy",
-                                               "spectralcorrelation", "spectralcosine")))
+    mass_error = normalized in ("deltamass", "dm", "absdm")
+    retention_error = (
+        ("rt" in normalized or "retention" in normalized)
+        and ("delta" in normalized or "diff" in normalized)
+    )
+    spectral_similarity = any(word in normalized for word in SIMILARITY_FEATURES)
+    return mass_error or retention_error or spectral_similarity
 
 
 def metric_key(name):
@@ -56,14 +65,14 @@ def idxml_rows(path):
     for protein in proteins:
         search = protein.getSearchParameters()
         if search.metaValueExists("extra_features"):
-            declared.extend(as_text(search.getMetaValue("extra_features")).split(","))
+            declared.extend(text(search.getMetaValue("extra_features")).split(","))
     columns = list(dict.fromkeys(name.strip() for name in declared if name.strip()))
     rows = []
     for peptide in peptides:
         for hit in peptide.getHits():
             label = (target_decoy(hit.getMetaValue("target_decoy"))
                      if hit.metaValueExists("target_decoy") else "unknown")
-            values = {name: as_text(hit.getMetaValue(name))
+            values = {name: text(hit.getMetaValue(name))
                       for name in columns if hit.metaValueExists(name)}
             rows.append((label, values))
     return columns, rows
@@ -105,77 +114,165 @@ def summarize_pin_categories(metrics, columns, by_group, groups):
         prefix = f"feature_{kind}"
         if not fields:
             for group in groups:
-                metrics.unavailable(prefix + "_psm_count", "count", group)
+                metrics.unavailable(
+                    name=prefix + "_psm_count",
+                    unit="count",
+                    group=group,
+                )
             continue
-        counts = {group: Counter(pin_category(row, fields, kind)
-                                 for row in by_group[group]) for group in groups}
+        counts = {}
+        for group in groups:
+            counts[group] = Counter(
+                pin_category(row, fields, kind)
+                for row in by_group[group]
+            )
         categories = set(fixed_categories)
         for group in groups:
             categories.update(counts[group])
         categories.difference_update(("missing", "invalid"))
         for group in groups:
             for category in sorted(
-                    categories,
-                    key=lambda item: (not item.isdigit(),
-                                      int(item) if item.isdigit() else item)):
-                metrics.add(f"{prefix}_{category}_psm_count", counts[group][category], group=group)
+                categories,
+                key=lambda item: (not item.isdigit(),
+                                  int(item) if item.isdigit() else item),
+            ):
+                metrics.add(
+                    name=f"{prefix}_{category}_psm_count",
+                    value=counts[group][category],
+                    group=group,
+                )
             for issue in ("missing", "invalid"):
-                metrics.add(f"{prefix}_{issue}_psm_count", counts[group][issue], group=group)
+                metrics.add(
+                    name=f"{prefix}_{issue}_psm_count",
+                    value=counts[group][issue],
+                    group=group,
+                )
 
 
-def summarize(args):
-    """Write compact feature distributions by target/decoy class."""
-    metrics = Metrics(args.dataset_id, args.sample_name, args.input, "psm_features",
-                      source_process=args.route, search_engine=args.search_engine,
-                      fraction_id=args.fraction_id)
-    columns, rows = (pin_rows(args.input) if args.route == "MSBooster"
-                     else idxml_rows(args.input))
-    groups = ("all", "target", "decoy", "unknown")
-    by_group = defaultdict(list)
-    for label, values in rows:
-        by_group["all"].append(values)
-        by_group[label].append(values)
-    for group in groups:
-        metrics.add("feature_psm_count", len(by_group[group]), group=group)
-    if args.route == "MSBooster":
-        summarize_pin_categories(metrics, columns, by_group, groups)
-    feature_columns = [name for name in columns if selected_feature(name)]
-    metric_names = [metric_key(name) for name in feature_columns]
-    if len(metric_names) != len(set(metric_names)):
-        raise ValueError("Feature column names collide after metric-name normalization")
-    for name in feature_columns:
-        unit = "m/z" if name.lower() == "deltamass" else ""
-        for group in groups:
-            values = [row.get(name) for row in by_group[group]]
-            metrics.distribution(metric_key(name), values, unit, group)
-            if ("delta" in name.lower() or name.lower() == "dm" or
-                    ("diff" in name.lower() and "rt" in name.lower())):
-                metrics.distribution(metric_key(name) + "_absolute",
-                                     (abs(number) if (number := finite(value)) is not None
-                                      else None for value in values), unit, group)
-    mass_column = next((name for name in columns if name.lower() == "deltamass"), None)
-    calc_column = next((name for name in columns if name.lower() == "calcmass"), None)
-    rt_columns = [name for name in feature_columns
-                  if ("rt" in name.lower() or "retention" in name.lower()) and
-                  ("delta" in name.lower() or "diff" in name.lower())]
-    for group in groups:
-        if mass_column and calc_column:
-            errors = []
-            for row in by_group[group]:
-                delta, theoretical = finite(row.get(mass_column)), finite(row.get(calc_column))
-                errors.append(delta / theoretical * 1_000_000
-                              if delta is not None and theoretical is not None and theoretical > 0
-                              else None)
-            metrics.distribution("feature_mass_error_ppm_signed", errors, "ppm", group)
-            metrics.distribution("feature_mass_error_ppm_absolute",
-                                 (abs(value) if value is not None else None for value in errors),
-                                 "ppm", group)
-        else:
-            metrics.unavailable("feature_mass_error_ppm_signed_p50", "ppm", group)
-            metrics.unavailable("feature_mass_error_ppm_absolute_p50", "ppm", group)
-        if not rt_columns:
-            metrics.unavailable("feature_rt_delta_p50", group=group)
-    metrics.write(args.output)
+class PSMFeaturesSummarizer:
+    """Summarize published PSM features by target/decoy class."""
+
+    GROUPS = ("all", "target", "decoy", "unknown")
+
+    def __init__(
+        self,
+        input_path,
+        dataset_id,
+        sample_name,
+        search_engine,
+        route,
+        fraction_id,
+    ):
+        self.input_path = input_path
+        self.route = route
+        self.metrics = Metrics(
+            dataset_id=dataset_id,
+            layer="psm_features",
+            source=input_path,
+            sample_name=sample_name,
+            source_process=route,
+            search_engine=search_engine,
+            fraction_id=fraction_id,
+        )
+        self.columns = []
+        self.by_group = defaultdict(list)
+
+    def load_rows(self):
+        """Read a PIN or idXML and partition feature rows by label."""
+        self.columns, rows = (pin_rows(self.input_path) if self.route == "MSBooster"
+                              else idxml_rows(self.input_path))
+        for label, values in rows:
+            self.by_group["all"].append(values)
+            self.by_group[label].append(values)
+
+    def summarize_counts_and_categories(self):
+        """Count PSMs and MSBooster enzyme or charge categories."""
+        for group in self.GROUPS:
+            self.metrics.add(
+                name="feature_psm_count",
+                value=len(self.by_group[group]),
+                group=group,
+            )
+        if self.route == "MSBooster":
+            summarize_pin_categories(
+                metrics=self.metrics,
+                columns=self.columns,
+                by_group=self.by_group,
+                groups=self.GROUPS,
+            )
+
+    def summarize_source_features(self):
+        """Keep each selected source feature and its absolute deviation where relevant."""
+        feature_columns = [name for name in self.columns if selected_feature(name)]
+        metric_names = [metric_key(name) for name in feature_columns]
+        if len(metric_names) != len(set(metric_names)):
+            raise ValueError("Feature column names collide after metric-name normalization")
+        for name in feature_columns:
+            unit = "m/z" if name.lower() == "deltamass" else ""
+            for group in self.GROUPS:
+                values = [row.get(name) for row in self.by_group[group]]
+                self.metrics.distribution(
+                    name=metric_key(name),
+                    values=values,
+                    unit=unit,
+                    group=group,
+                )
+                if ("delta" in name.lower() or name.lower() == "dm" or
+                        ("diff" in name.lower() and "rt" in name.lower())):
+                    self.metrics.distribution(
+                        name=metric_key(name) + "_absolute",
+                        values=(abs(number) if (number := finite(value)) is not None
+                                else None for value in values),
+                        unit=unit,
+                        group=group,
+                    )
+
+    def summarize_mass_error(self):
+        """Derive ppm mass error when both MSBooster mass fields exist."""
+        mass_column = next((name for name in self.columns if name.lower() == "deltamass"), None)
+        calc_column = next((name for name in self.columns if name.lower() == "calcmass"), None)
+        for group in self.GROUPS:
+            if mass_column and calc_column:
+                errors = []
+                for row in self.by_group[group]:
+                    delta = finite(row.get(mass_column))
+                    theoretical = finite(row.get(calc_column))
+                    if delta is not None and theoretical is not None and theoretical > 0:
+                        error = delta / theoretical * 1_000_000
+                    else:
+                        error = None
+                    errors.append(error)
+                self.metrics.distribution(
+                    name="feature_mass_error_ppm_signed",
+                    values=errors,
+                    unit="ppm",
+                    group=group,
+                )
+                self.metrics.distribution(
+                    name="feature_mass_error_ppm_absolute",
+                    values=(abs(value) if value is not None else None for value in errors),
+                    unit="ppm",
+                    group=group,
+                )
+            else:
+                self.metrics.unavailable_distribution(
+                    name="feature_mass_error_ppm_signed",
+                    unit="ppm",
+                    group=group,
+                )
+                self.metrics.unavailable_distribution(
+                    name="feature_mass_error_ppm_absolute",
+                    unit="ppm",
+                    group=group,
+                )
+
+    def run(self, output_path):
+        """Read the features and write their QC summaries."""
+        self.load_rows()
+        self.summarize_counts_and_categories()
+        self.summarize_source_features()
+        self.summarize_mass_error()
+        self.metrics.write(output_path)
 
 
 if __name__ == "__main__":
@@ -184,4 +281,13 @@ if __name__ == "__main__":
                      "route"):
         parser.add_argument("--" + argument, required=True)
     parser.add_argument("--fraction-id", default="")
-    summarize(parser.parse_args())
+    args = parser.parse_args()
+    summarizer = PSMFeaturesSummarizer(
+        input_path=args.input,
+        dataset_id=args.dataset_id,
+        sample_name=args.sample_name,
+        search_engine=args.search_engine,
+        route=args.route,
+        fraction_id=args.fraction_id,
+    )
+    summarizer.run(args.output)

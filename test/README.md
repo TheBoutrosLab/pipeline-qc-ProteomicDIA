@@ -30,7 +30,7 @@ outputs under `$TEST_DATA_DIR/hela_diapasef/output`, including the published DIA
 report. The report's `Run` value is the original Bruker `.d` stem, which the QC reader
 maps to `hela_50ng_5_6min` through `acquisition_path`.
 
-The `test-integration-ProteinProphet` case uses the verified
-E. coli DIA 1.4.0 output, with three acquisitions per sample (`F1`–`F3`).
+The `test-integration-ProteinProphet` case uses the E. coli DIA 1.5.0 output,
+with three acquisitions per sample (`F1`–`F3`).
 It uses the published combined DIA-NN report, which yields sample-level
 quantification metrics.
