@@ -82,7 +82,7 @@
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
       <li class="breadcrumb-item active">Testing</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/0c381cc89d236528afec8f7bb1ed49e56651ccb8/README.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/75f6b1750de0c167b0086e37fc8e87f1b1f586a4/README.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -91,10 +91,10 @@
             <div class="section" itemprop="articleBody">
               
                 <h2 id="testing">Testing</h2>
-<p>The UCLA nf-test suite has integration cases for ProteinProphet (multi-fraction), Fido, Epifany, ProtLoom, and HeLa dia-PASEF. The ProteinProphet case uses six fractionated <em>E. coli</em> mzML files; Fido, Epifany, and ProtLoom use two unfractionated files and their route-specific outputs. Set <code>TEST_DATA_DIR</code> in a local <code>.env</code> file using <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/0c381cc89d236528afec8f7bb1ed49e56651ccb8/.env-template"><code>.env-template</code></a>, then run a case inside a Slurm job:</p>
+<p>The UCLA nf-test suite has integration cases for ProteinProphet (multi-fraction), Fido, Epifany, ProtLoom, and HeLa dia-PASEF. The ProteinProphet case uses six fractionated <em>E. coli</em> mzML files; Fido, Epifany, and ProtLoom use two unfractionated files and their route-specific outputs. Set <code>TEST_DATA_DIR</code> in a local <code>.env</code> file using <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/75f6b1750de0c167b0086e37fc8e87f1b1f586a4/.env-template"><code>.env-template</code></a>, then run a case inside a Slurm job:</p>
 <pre><code class="language-bash">bash test/run-nftest.sh test-integration-ProteinProphet
 </code></pre>
-<p>See <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/0c381cc89d236528afec8f7bb1ed49e56651ccb8/test/README.md">test/README.md</a> for the other case names and test-data layout. These tests require the lab's external metapipeline outputs; they are not self-contained fixtures. The ProteinProphet case uses the final aggregated DIA-NN report, so its quantification metrics are sample-level.</p>
+<p>See <a href="https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/blob/75f6b1750de0c167b0086e37fc8e87f1b1f586a4/test/README.md">test/README.md</a> for the other case names and test-data layout. These tests require the lab's external metapipeline outputs; they are not self-contained fixtures. The ProteinProphet case uses the final aggregated DIA-NN report, so its quantification metrics are sample-level.</p>
               
             </div>
           </div><footer>
