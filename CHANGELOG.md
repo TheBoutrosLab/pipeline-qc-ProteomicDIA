@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Let Nextflow cache Apptainer images before launching parallel QC tasks ([#19](https://github.com/TheBoutrosLab/pipeline-qc-ProteomicDIA/issues/19)).
+
 ## [1.3.0] - 2026-11-13
 
 ### Added
