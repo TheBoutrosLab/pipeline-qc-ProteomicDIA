@@ -148,4 +148,9 @@ See [test/README.md](test/README.md) for the other case names and test-data layo
 
 ## License
 
-Licensed under GNU General Public License version 2. See [LICENSE](LICENSE).
+The code in pipeline-qc-ProteomicDIA is licensed under the
+BSD 3-Clause License (`BSD-3-Clause`). See [LICENSE](LICENSE) for the terms.
+
+Shared code and third-party tools retain their respective licenses.
+
+Copyright (C) 2026 Sanford Burnham Prebys Medical Discovery Institute ("Boutros Lab")
